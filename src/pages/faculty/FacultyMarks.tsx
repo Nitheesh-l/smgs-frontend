@@ -69,6 +69,13 @@ interface Mark {
   subject_code?: string;
 }
 
+const examTypeOptions: { value: ExamType; label: string }[] = [
+  { value: "unit_test_internal", label: "Unit Test (Internal)" },
+  { value: "unit_test_external", label: "Unit Test (External)" },
+  { value: "lab_internal", label: "Lab (Internal)" },
+  { value: "lab_external", label: "Lab (External)" },
+];
+
 
 const FacultyMarks = () => {
   const { profile, loading: authLoading } = useAuth();
@@ -149,6 +156,7 @@ const FacultyMarks = () => {
     subject_id: "",
     marks_obtained: "",
     total_marks: "100",
+    exam_type: "unit_test_internal",
     academicYear: "2025-26",
   });
 
@@ -230,9 +238,13 @@ const FacultyMarks = () => {
         return;
       }
 
-      // determine a default exam_type using the subject's declared type
+      // use selected exam_type from form if provided, otherwise determine default from subject
       const subj = subjects.find((s) => s._id === formData.subject_id);
-      const examType: ExamType = subj?.type === "lab" ? "lab_internal" : "unit_test_internal";
+      const examType: ExamType = (formData as any).exam_type
+        ? (formData as any).exam_type
+        : subj?.type === "lab"
+        ? "lab_internal"
+        : "unit_test_internal";
       const { res, data } = await fetchJson("/api/marks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -261,6 +273,7 @@ const FacultyMarks = () => {
         subject_id: "",
         marks_obtained: "",
         total_marks: "100",
+        exam_type: "unit_test_internal",
         academicYear: "2025-26",
       });
       fetchData();
@@ -375,6 +388,27 @@ const FacultyMarks = () => {
                       {subjects.map((subject) => (
                         <SelectItem key={subject._id} value={subject._id}>
                           {subject.name} ({subject.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Exam Type</Label>
+                  <Select
+                    value={formData.exam_type}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, exam_type: value as ExamType })
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select exam type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {examTypeOptions.map((op) => (
+                        <SelectItem key={op.value} value={op.value}>
+                          {op.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
