@@ -231,6 +231,8 @@ const StudentMarks = () => {
                         <TableHead className="text-center">Marks Obtained</TableHead>
                         <TableHead className="text-center">Total Marks</TableHead>
                         <TableHead className="text-center">Percentage</TableHead>
+                        <TableHead className="text-center">Combined</TableHead>
+                        <TableHead className="text-center">Result</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -264,6 +266,17 @@ const StudentMarks = () => {
                               >
                                 {percentage}%
                               </span>
+                            </TableCell>
+                            {/* combined equals same as obtained/total for single examType */}
+                            <TableCell className="text-center">
+                              {mark.marks_obtained}/{mark.total_marks}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {percentage >= 50 ? (
+                                <span className="text-success font-semibold">Pass</span>
+                              ) : (
+                                <span className="text-destructive font-semibold">Fail</span>
+                              )}
                             </TableCell>
                           </TableRow>
                         );

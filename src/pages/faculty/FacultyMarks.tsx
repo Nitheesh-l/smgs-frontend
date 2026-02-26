@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import GlassNav from "@/components/layout/GlassNav";
 import PageWrapper from "@/components/layout/PageWrapper";
@@ -96,6 +96,44 @@ const FacultyMarks = () => {
   const [selectedSemester, setSelectedSemester] = useState("1");
   const [selectedYear, setSelectedYear] = useState("1");
   const [selectedExamType, setSelectedExamType] = useState<ExamType>("unit_test_internal");
+  const [selectedSubjectType, setSelectedSubjectType] = useState<"all" | "theory" | "lab">("all");
+
+  // when filtering 'all' we want to combine theory+lab records into a single row per student+subject
+  const displayMarks = useMemo(() => {
+    if (selectedSubjectType !== "all") {
+      return marks;
+    }
+    // group by student and subject
+    const map = new Map<string, (Mark & { combined?: boolean; count: number })>();
+    marks.forEach((m) => {
+      const key = `${m.student_id}-${m.subject_id}`;
+      if (!map.has(key)) {
+        map.set(key, { ...m, count: 1 });
+      } else {
+        const existing = map.get(key)!;
+        existing.marks_obtained += m.marks_obtained;
+        existing.total_marks += m.total_marks;
+        existing.count += 1;
+      }
+    });
+    const result: (Mark & { combined?: boolean })[] = [];
+    map.forEach((m) => {
+      if (m.count > 1) {
+        // convert to percentage out of 100 and label as combined
+        const percent = (m.marks_obtained / m.total_marks) * 100;
+        result.push({
+          ...m,
+          marks_obtained: parseFloat(percent.toFixed(1)),
+          total_marks: 100,
+          subject_name: m.subject_name + " (Theory + Lab)",
+          combined: true,
+        });
+      } else {
+        result.push(m);
+      }
+    });
+    return result;
+  }, [marks, selectedSubjectType]);
   const [formData, setFormData] = useState({
     student_id: "",
     subject_id: "",
@@ -132,10 +170,18 @@ const FacultyMarks = () => {
       const params = new URLSearchParams();
       params.set('semester', selectedSemester);
       params.set('exam_type', selectedExamType);
-      
+
       const { res: marksRes, data: marksData } = await fetchJson(`/api/marks?${params.toString()}`);
       if (marksRes.ok) {
-        setMarks(Array.isArray(marksData) ? marksData : []);
+        let marksList: Mark[] = Array.isArray(marksData) ? marksData : [];
+        // filter by subject type if not 'all'
+        if (selectedSubjectType !== "all" && subjects.length > 0) {
+          const allowed = subjects
+            .filter((s) => s.type === selectedSubjectType)
+            .map((s) => s._id);
+          marksList = marksList.filter((m) => allowed.includes(m.subject_id));
+        }
+        setMarks(marksList);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -149,7 +195,7 @@ const FacultyMarks = () => {
     if (profile?.role === "faculty") {
       fetchData();
     }
-  }, [profile, selectedSemester, selectedExamType]);
+  }, [profile, selectedSemester, selectedExamType, selectedSubjectType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -551,6 +597,22 @@ const FacultyMarks = () => {
               </Select>
             </div>
             <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Subject Type:</span>
+              <Select
+                value={selectedSubjectType}
+                onValueChange={(v) => setSelectedSubjectType(v as "all"|"theory"|"lab")}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="theory">Theory</SelectItem>
+                  <SelectItem value="lab">Lab</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Exam Type:</span>
               <Select
                 value={selectedExamType}
@@ -583,11 +645,13 @@ const FacultyMarks = () => {
                     <TableHead>Marks Obtained</TableHead>
                     <TableHead>Total Marks</TableHead>
                     <TableHead>Percentage</TableHead>
+                    <TableHead>Combined</TableHead>
+                    <TableHead>Result</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {marks.map((mark) => {
+                  {displayMarks.map((mark) => {
                     const percentage = ((mark.marks_obtained / mark.total_marks) * 100).toFixed(1);
                     return (
                       <TableRow key={mark._id}>
@@ -617,15 +681,27 @@ const FacultyMarks = () => {
                             {percentage}%
                           </span>
                         </TableCell>
+                        <TableCell>
+                          {mark.marks_obtained}/{mark.total_marks}
+                        </TableCell>
+                        <TableCell>
+                          {Number(percentage) >= 50 ? (
+                            <span className="text-success font-semibold">Pass</span>
+                          ) : (
+                            <span className="text-destructive font-semibold">Fail</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(mark)}
-                            className="hover:bg-destructive/10 hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {!mark.combined && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(mark)}
+                              className="hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
