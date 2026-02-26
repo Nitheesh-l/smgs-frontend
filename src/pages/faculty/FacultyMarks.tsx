@@ -104,22 +104,20 @@ const FacultyMarks = () => {
   const [selectedSubjectType, setSelectedSubjectType] = useState<"all" | "theory" | "lab">("all");
   const [selectedStudent, setSelectedStudent] = useState<string>("all");
 
-  // combine internal+external for theory subjects when Subject Type is 'all' or 'theory'
-  // but if a specific student is selected, show entries separately
+  // combine internal+external for theory and lab when Subject Type is 'all' or matches subject type
+  // if a specific student is selected, show entries separately
   const displayMarks = useMemo<(Mark & { combined?: boolean })[]>(() => {
     if (selectedStudent !== "all") {
       return marks;
     }
-    if (selectedSubjectType === "lab") {
-      return marks;
-    }
 
-    // group by student + subject; for lab keep exam_type separate so lab rows stay distinct
+    // group by student + subject type when allowed (theory/lab), otherwise keep per exam_type
     const map = new Map<string, (Mark & { count: number })>();
     marks.forEach((m) => {
       const subj = subjects.find((s) => s._id === m.subject_id);
-      const isTheory = subj?.type === "theory";
-      const key = isTheory ? `${m.student_id}-${m.subject_id}-theory` : `${m.student_id}-${m.subject_id}-${m.exam_type}`;
+      const subjType = subj?.type;
+      const shouldCombine = subjType && (subjType === "theory" || subjType === "lab") && (selectedSubjectType === "all" || selectedSubjectType === subjType);
+      const key = shouldCombine ? `${m.student_id}-${m.subject_id}-${subjType}` : `${m.student_id}-${m.subject_id}-${m.exam_type}`;
 
       if (!map.has(key)) {
         map.set(key, { ...m, count: 1 });
@@ -134,15 +132,16 @@ const FacultyMarks = () => {
     const result: (Mark & { combined?: boolean })[] = [];
     map.forEach((m) => {
       const subj = subjects.find((s) => s._id === m.subject_id);
-      const isTheory = subj?.type === "theory";
-      if (m.count > 1 && isTheory) {
-        // combine theory internal+external into a 100-mark line
+      const subjType = subj?.type;
+      if (m.count > 1 && (subjType === "theory" || subjType === "lab")) {
+        // combine internal+external into a 100-mark line
         const percent = (m.marks_obtained / m.total_marks) * 100;
+        const label = subjType ? `${subjType.charAt(0).toUpperCase() + subjType.slice(1)} - Combined` : "Combined";
         result.push({
           ...m,
           marks_obtained: parseFloat(percent.toFixed(1)),
           total_marks: 100,
-          subject_name: (m.subject_name || "") + " (Theory - Combined)",
+          subject_name: (m.subject_name || "") + ` (${label})`,
           combined: true,
         });
       } else {
@@ -150,7 +149,7 @@ const FacultyMarks = () => {
       }
     });
     return result;
-  }, [marks, selectedSubjectType, subjects]);
+  }, [marks, selectedSubjectType, subjects, selectedStudent]);
   const [formData, setFormData] = useState({
     student_id: "",
     subject_id: "",
