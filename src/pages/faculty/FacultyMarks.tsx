@@ -35,6 +35,9 @@ import { fetchJson } from "@/utils/api";
 import { toast } from "sonner";
 import { Plus, BookOpen, Filter, Trash2 } from "lucide-react";
 
+// exam types are no longer exposed in faculty UI; keep type for backend compatibility if needed
+// but most UI logic handles combined marks by subject/subject type.
+
 type ExamType = "unit_test_internal" | "unit_test_external" | "lab_internal" | "lab_external";
 
 interface Student {
@@ -49,6 +52,7 @@ interface Subject {
   name: string;
   code: string;
   semester: number;
+  type: string; // "theory" | "lab" | "project" etc.
 }
 
 interface Mark {
@@ -65,12 +69,6 @@ interface Mark {
   subject_code?: string;
 }
 
-const examTypeLabels: Record<ExamType, string> = {
-  unit_test_internal: "Unit Test (Internal)",
-  unit_test_external: "Unit Test (External)",
-  lab_internal: "Lab (Internal)",
-  lab_external: "Lab (External)",
-};
 
 const FacultyMarks = () => {
   const { profile, loading: authLoading } = useAuth();
@@ -95,11 +93,11 @@ const FacultyMarks = () => {
   });
   const [selectedSemester, setSelectedSemester] = useState("1");
   const [selectedYear, setSelectedYear] = useState("1");
-  const [selectedExamType, setSelectedExamType] = useState<ExamType>("unit_test_internal");
+  // exam type no longer used for filtering; backend receives a default based on subject
   const [selectedSubjectType, setSelectedSubjectType] = useState<"all" | "theory" | "lab">("all");
 
   // when filtering 'all' we want to combine theory+lab records into a single row per student+subject
-  const displayMarks = useMemo(() => {
+  const displayMarks = useMemo<(Mark & { combined?: boolean })[]>(() => {
     if (selectedSubjectType !== "all") {
       return marks;
     }
@@ -169,7 +167,6 @@ const FacultyMarks = () => {
       // Fetch marks
       const params = new URLSearchParams();
       params.set('semester', selectedSemester);
-      params.set('exam_type', selectedExamType);
 
       const { res: marksRes, data: marksData } = await fetchJson(`/api/marks?${params.toString()}`);
       if (marksRes.ok) {
@@ -195,7 +192,7 @@ const FacultyMarks = () => {
     if (profile?.role === "faculty") {
       fetchData();
     }
-  }, [profile, selectedSemester, selectedExamType, selectedSubjectType]);
+  }, [profile, selectedSemester, selectedSubjectType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,6 +215,9 @@ const FacultyMarks = () => {
         return;
       }
 
+      // determine a default exam_type using the subject's declared type
+      const subj = subjects.find((s) => s._id === formData.subject_id);
+      const examType: ExamType = subj?.type === "lab" ? "lab_internal" : "unit_test_internal";
       const { res, data } = await fetchJson("/api/marks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -225,7 +225,7 @@ const FacultyMarks = () => {
           student_id: formData.student_id,
           subject_id: formData.subject_id,
           semester: Number(selectedSemester),
-          exam_type: selectedExamType,
+          exam_type: examType,
           marks_obtained: marksObtained,
           total_marks: totalMarks,
           academic_year: formData.academicYear,
@@ -612,24 +612,6 @@ const FacultyMarks = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Exam Type:</span>
-              <Select
-                value={selectedExamType}
-                onValueChange={(value: ExamType) => setSelectedExamType(value)}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(examTypeLabels).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </GlassCard>
 
@@ -714,7 +696,7 @@ const FacultyMarks = () => {
               <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
               <h3 className="text-lg font-medium mb-2">No marks found</h3>
               <p className="text-muted-foreground mb-4">
-                No marks entries for Semester {selectedSemester} - {examTypeLabels[selectedExamType]}
+                No marks entries for Semester {selectedSemester}
               </p>
               <Button onClick={() => setIsDialogOpen(true)} className="btn-gradient">
                 <Plus className="w-4 h-4 mr-2" />

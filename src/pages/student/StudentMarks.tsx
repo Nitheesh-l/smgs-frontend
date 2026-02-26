@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import GlassNav from "@/components/layout/GlassNav";
 import PageWrapper from "@/components/layout/PageWrapper";
@@ -23,6 +23,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { BookOpen, Filter, Award } from "lucide-react";
 
+// exam types are no longer shown to students; marks are combined by subject
+
 type ExamType = "unit_test_internal" | "unit_test_external" | "lab_internal" | "lab_external";
 
 interface Mark {
@@ -35,12 +37,6 @@ interface Mark {
   subject_code: string;
 }
 
-const examTypeLabels: Record<ExamType, string> = {
-  unit_test_internal: "Unit Test (Internal)",
-  unit_test_external: "Unit Test (External)",
-  lab_internal: "Lab (Internal)",
-  lab_external: "Lab (External)",
-};
 
 const StudentMarks = () => {
   const { profile, loading: authLoading } = useAuth();
@@ -112,14 +108,35 @@ const StudentMarks = () => {
     }
   }, [studentId, selectedSemester]);
 
-  // Group marks by exam type
-  const marksByExamType = marks.reduce((acc, mark) => {
-    if (!acc[mark.exam_type]) {
-      acc[mark.exam_type] = [];
-    }
-    acc[mark.exam_type].push(mark);
-    return acc;
-  }, {} as Record<ExamType, Mark[]>);
+  // combine internal/external marks by subject code
+  const displayMarks = useMemo(() => {
+    const map = new Map<string, Mark & { count: number }>();
+    marks.forEach((m) => {
+      const key = m.subject_code;
+      if (!map.has(key)) {
+        map.set(key, { ...m, count: 1 });
+      } else {
+        const existing = map.get(key)!;
+        existing.marks_obtained += m.marks_obtained;
+        existing.total_marks += m.total_marks;
+        existing.count += 1;
+      }
+    });
+    const arr: Mark[] = [];
+    map.forEach((m) => {
+      if (m.count > 1) {
+        const percent = (m.marks_obtained / m.total_marks) * 100;
+        arr.push({
+          ...m,
+          marks_obtained: parseFloat(percent.toFixed(1)),
+          total_marks: 100,
+        });
+      } else {
+        arr.push(m);
+      }
+    });
+    return arr;
+  }, [marks]);
 
   // Calculate totals
   const totalMarksObtained = marks.reduce((sum, m) => sum + m.marks_obtained, 0);
@@ -214,78 +231,69 @@ const StudentMarks = () => {
           </GlassCard>
         ) : marks.length > 0 ? (
           <div className="space-y-6">
-            {Object.entries(marksByExamType).map(([examType, examMarks]) => (
-              <GlassCard key={examType} className="overflow-hidden">
-                <div className="p-4 border-b border-border bg-muted/30">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-primary" />
-                    {examTypeLabels[examType as ExamType]}
-                  </h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Subject</TableHead>
-                        <TableHead>Code</TableHead>
-                        <TableHead className="text-center">Marks Obtained</TableHead>
-                        <TableHead className="text-center">Total Marks</TableHead>
-                        <TableHead className="text-center">Percentage</TableHead>
-                        <TableHead className="text-center">Combined</TableHead>
-                        <TableHead className="text-center">Result</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {examMarks.map((mark) => {
-                        const percentage = Math.round((mark.marks_obtained / mark.total_marks) * 100);
-                        return (
-                          <TableRow key={mark.id}>
-                            <TableCell className="font-medium">
-                              {mark.subject_name}
-                            </TableCell>
-                            <TableCell>
-                              <span className="px-2 py-1 rounded-full bg-muted text-xs font-medium">
-                                {mark.subject_code}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-center font-semibold">
-                              {mark.marks_obtained}
-                            </TableCell>
-                            <TableCell className="text-center text-muted-foreground">
-                              {mark.total_marks}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  percentage >= 75
-                                    ? "bg-success/10 text-success"
-                                    : percentage >= 50
-                                    ? "bg-warning/10 text-warning"
-                                    : "bg-destructive/10 text-destructive"
-                                }`}
-                              >
-                                {percentage}%
-                              </span>
-                            </TableCell>
-                            {/* combined equals same as obtained/total for single examType */}
-                            <TableCell className="text-center">
-                              {mark.marks_obtained}/{mark.total_marks}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {percentage >= 50 ? (
-                                <span className="text-success font-semibold">Pass</span>
-                              ) : (
-                                <span className="text-destructive font-semibold">Fail</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              </GlassCard>
-            ))}
+            <GlassCard className="overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Code</TableHead>
+                      <TableHead className="text-center">Marks Obtained</TableHead>
+                      <TableHead className="text-center">Total Marks</TableHead>
+                      <TableHead className="text-center">Percentage</TableHead>
+                      <TableHead className="text-center">Combined</TableHead>
+                      <TableHead className="text-center">Result</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {displayMarks.map((mark) => {
+                      const percentage = Math.round((mark.marks_obtained / mark.total_marks) * 100);
+                      return (
+                        <TableRow key={mark.id}>
+                          <TableCell className="font-medium">
+                            {mark.subject_name}
+                          </TableCell>
+                          <TableCell>
+                            <span className="px-2 py-1 rounded-full bg-muted text-xs font-medium">
+                              {mark.subject_code}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center font-semibold">
+                            {mark.marks_obtained}
+                          </TableCell>
+                          <TableCell className="text-center text-muted-foreground">
+                            {mark.total_marks}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                percentage >= 75
+                                  ? "bg-success/10 text-success"
+                                  : percentage >= 50
+                                  ? "bg-warning/10 text-warning"
+                                  : "bg-destructive/10 text-destructive"
+                              }`}
+                            >
+                              {percentage}%
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {mark.marks_obtained}/{mark.total_marks}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {percentage >= 50 ? (
+                              <span className="text-success font-semibold">Pass</span>
+                            ) : (
+                              <span className="text-destructive font-semibold">Fail</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </GlassCard>
           </div>
         ) : (
           <GlassCard className="p-16 text-center">
