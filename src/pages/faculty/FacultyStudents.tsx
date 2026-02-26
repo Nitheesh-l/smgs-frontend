@@ -52,7 +52,7 @@ interface Student {
 const studentSchema = z.object({
   roll_number: z.string().min(1, "Roll number is required"),
   full_name: z.string().min(2, "Full name is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.union([z.string().min(6, "Password must be at least 6 characters"), z.literal('')]),
   year_of_study: z.number().min(1).max(3),
   gender: z.enum(["male", "female", "other"]),
   phone_number: z.string().optional(),
@@ -96,6 +96,8 @@ const FacultyStudents = () => {
 
       // Ensure data is an array
       const studentsArray = Array.isArray(data) ? data : data?.students || [];
+      // sort by creation date ascending (oldest first)
+      studentsArray.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
       setStudents(studentsArray);
     } catch (error) {
       console.error("Error fetching students:", error);
@@ -116,6 +118,13 @@ const FacultyStudents = () => {
     setSubmitting(true);
 
     try {
+      // Custom validation: password required for new student, optional for edit
+      if (!editingStudent && !formData.password) {
+        toast.error("Password is required for new students");
+        setSubmitting(false);
+        return;
+      }
+
       const result = studentSchema.safeParse({
         ...formData,
         year_of_study: Number(formData.year_of_study),
@@ -130,18 +139,24 @@ const FacultyStudents = () => {
       const method = editingStudent ? "PUT" : "POST";
       const url = editingStudent ? `/api/students/${editingStudent._id}` : "/api/students";  // ✅ Use _id
 
+      const payload: any = {
+        roll_number: formData.roll_number,
+        full_name: formData.full_name,
+        year_of_study: Number(formData.year_of_study),
+        gender: formData.gender,
+        phone_number: formData.phone_number || null,
+        branch_code: formData.branch_code,
+      };
+
+      // Only include password if provided
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+
       const { res, data } = await fetchJson(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          roll_number: formData.roll_number,
-          full_name: formData.full_name,
-          password: formData.password,
-          year_of_study: Number(formData.year_of_study),
-          gender: formData.gender,
-          phone_number: formData.phone_number || null,
-          branch_code: formData.branch_code,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -285,7 +300,9 @@ const FacultyStudents = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">
+                    Password {editingStudent && <span className="text-xs text-muted-foreground">(Leave blank to keep current)</span>}
+                  </Label>
                   <Input
                     id="password"
                     type="password"
@@ -293,7 +310,7 @@ const FacultyStudents = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    placeholder="Set initial password (min 6 characters)"
+                    placeholder={editingStudent ? "••••••••" : "Set initial password (min 6 characters)"}
                     className="mt-1"
                   />
                 </div>
@@ -433,6 +450,7 @@ const FacultyStudents = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Roll Number</TableHead>
+                    <TableHead>Name</TableHead>
                     <TableHead>Year</TableHead>
                     <TableHead>Gender</TableHead>
                     <TableHead>Branch</TableHead>
