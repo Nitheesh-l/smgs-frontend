@@ -97,9 +97,9 @@ const FacultyMarks = () => {
   const [selectedSubjectType, setSelectedSubjectType] = useState<"all" | "theory" | "lab">("all");
   const [selectedStudent, setSelectedStudent] = useState<string>("all");
 
-  // when filtering 'all' we want to combine internal+external only for theory subjects
+  // combine internal+external for theory subjects when Subject Type is 'all' or 'theory'
   const displayMarks = useMemo<(Mark & { combined?: boolean })[]>(() => {
-    if (selectedSubjectType !== "all") {
+    if (selectedSubjectType === "lab") {
       return marks;
     }
 
