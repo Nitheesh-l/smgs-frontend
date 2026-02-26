@@ -98,7 +98,11 @@ const FacultyMarks = () => {
   const [selectedStudent, setSelectedStudent] = useState<string>("all");
 
   // combine internal+external for theory subjects when Subject Type is 'all' or 'theory'
+  // but if a specific student is selected, show entries separately
   const displayMarks = useMemo<(Mark & { combined?: boolean })[]>(() => {
+    if (selectedStudent !== "all") {
+      return marks;
+    }
     if (selectedSubjectType === "lab") {
       return marks;
     }
