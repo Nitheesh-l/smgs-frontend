@@ -95,16 +95,21 @@ const FacultyMarks = () => {
   const [selectedYear, setSelectedYear] = useState("1");
   // exam type no longer used for filtering; backend receives a default based on subject
   const [selectedSubjectType, setSelectedSubjectType] = useState<"all" | "theory" | "lab">("all");
+  const [selectedStudent, setSelectedStudent] = useState<string>("all");
 
-  // when filtering 'all' we want to combine theory+lab records into a single row per student+subject
+  // when filtering 'all' we want to combine internal+external only for theory subjects
   const displayMarks = useMemo<(Mark & { combined?: boolean })[]>(() => {
     if (selectedSubjectType !== "all") {
       return marks;
     }
-    // group by student and subject
-    const map = new Map<string, (Mark & { combined?: boolean; count: number })>();
+
+    // group by student + subject; for lab keep exam_type separate so lab rows stay distinct
+    const map = new Map<string, (Mark & { count: number })>();
     marks.forEach((m) => {
-      const key = `${m.student_id}-${m.subject_id}`;
+      const subj = subjects.find((s) => s._id === m.subject_id);
+      const isTheory = subj?.type === "theory";
+      const key = isTheory ? `${m.student_id}-${m.subject_id}-theory` : `${m.student_id}-${m.subject_id}-${m.exam_type}`;
+
       if (!map.has(key)) {
         map.set(key, { ...m, count: 1 });
       } else {
@@ -114,16 +119,19 @@ const FacultyMarks = () => {
         existing.count += 1;
       }
     });
+
     const result: (Mark & { combined?: boolean })[] = [];
     map.forEach((m) => {
-      if (m.count > 1) {
-        // convert to percentage out of 100 and label as combined
+      const subj = subjects.find((s) => s._id === m.subject_id);
+      const isTheory = subj?.type === "theory";
+      if (m.count > 1 && isTheory) {
+        // combine theory internal+external into a 100-mark line
         const percent = (m.marks_obtained / m.total_marks) * 100;
         result.push({
           ...m,
           marks_obtained: parseFloat(percent.toFixed(1)),
           total_marks: 100,
-          subject_name: m.subject_name + " (Theory + Lab)",
+          subject_name: (m.subject_name || "") + " (Theory - Combined)",
           combined: true,
         });
       } else {
@@ -131,7 +139,7 @@ const FacultyMarks = () => {
       }
     });
     return result;
-  }, [marks, selectedSubjectType]);
+  }, [marks, selectedSubjectType, subjects]);
   const [formData, setFormData] = useState({
     student_id: "",
     subject_id: "",
@@ -167,6 +175,9 @@ const FacultyMarks = () => {
       // Fetch marks
       const params = new URLSearchParams();
       params.set('semester', selectedSemester);
+      if (selectedStudent && selectedStudent !== "all") {
+        params.set('student_id', selectedStudent);
+      }
 
       const { res: marksRes, data: marksData } = await fetchJson(`/api/marks?${params.toString()}`);
       if (marksRes.ok) {
@@ -192,7 +203,7 @@ const FacultyMarks = () => {
     if (profile?.role === "faculty") {
       fetchData();
     }
-  }, [profile, selectedSemester, selectedSubjectType]);
+  }, [profile, selectedSemester, selectedSubjectType, selectedStudent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -593,6 +604,22 @@ const FacultyMarks = () => {
                       </SelectItem>
                     ));
                   })()}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Student:</span>
+              <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                <SelectTrigger className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Students</SelectItem>
+                  {students.map((student) => (
+                    <SelectItem key={student._id} value={student._id}>
+                      {student.roll_number}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
