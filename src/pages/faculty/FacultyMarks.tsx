@@ -615,11 +615,14 @@ const FacultyMarks = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Students</SelectItem>
-                  {students.map((student) => (
-                    <SelectItem key={student._id} value={student._id}>
-                      {student.roll_number}
-                    </SelectItem>
-                  ))}
+                  {students
+                    .filter((s) => s.year_of_study === Number(selectedYear))
+                    .sort((a, b) => a.roll_number.localeCompare(b.roll_number))
+                    .map((student) => (
+                      <SelectItem key={student._id} value={student._id}>
+                        {student.roll_number}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
