@@ -40,6 +40,7 @@ type Gender = "male" | "female" | "other";
 interface Student {
   _id: string;  // ✅ Change from 'id' to '_id'
   roll_number: string;
+  full_name?: string | null; // added full_name from profile lookup
   year_of_study: number;
   gender: Gender;
   phone_number: string | null;
@@ -188,7 +189,7 @@ const FacultyStudents = () => {
     setEditingStudent(student);
     setFormData({
       roll_number: student.roll_number,
-      full_name: "",  
+      full_name: student.full_name || "",
       password: "",
       year_of_study: student.year_of_study,
       gender: student.gender,
@@ -330,6 +331,7 @@ const FacultyStudents = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="CSE">CSE</SelectItem>
+                        <SelectItem value="DCME">DCME</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -444,6 +446,7 @@ const FacultyStudents = () => {
                       <TableCell className="font-medium">
                         {student.roll_number}
                       </TableCell>
+                      <TableCell>{student.full_name}</TableCell>
                       <TableCell>{student.year_of_study}</TableCell>
                       <TableCell>{student.gender}</TableCell>
                       <TableCell>{student.branch_code}</TableCell>

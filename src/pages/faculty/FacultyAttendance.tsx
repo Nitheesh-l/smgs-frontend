@@ -34,11 +34,12 @@ const FacultyAttendance = () => {
   const { profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
-  const [attendance, setAttendance] = useState<Record<string, boolean>>({});
+  const [attendance, setAttendance] = useState<Record<string, boolean[]>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(1);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const TOTAL_PERIODS = 7;
 
   useEffect(() => {
     if (!authLoading && (!profile || profile.role !== "faculty")) {
@@ -72,20 +73,28 @@ const FacultyAttendance = () => {
       // Ensure attendance data is an array
       const attendanceArray = Array.isArray(attendanceData) ? attendanceData : attendanceData?.data || [];
 
-      // Build attendance map. Server stores periods_present/total_periods/status.
-      const attendanceMap: Record<string, boolean> = {};
+      // Build attendance map with period tracking as boolean array
+      const attendanceMap: Record<string, boolean[]> = {};
+      
+      // Initialize all students with all 7 periods as false (not attended)
+      filteredStudents.forEach((student) => {
+        attendanceMap[student._id] = Array(TOTAL_PERIODS).fill(false);
+      });
       
       // Create a set of student IDs from filtered students for quick lookup
       const filteredStudentIds = new Set(filteredStudents.map(s => s._id));
       
-      // Only add attendance records for students in the selected year
+      // Load existing attendance records
       attendanceArray.forEach((record: any) => {
         const sid = String(record.student_id ?? record.student_id?._id ?? '');
-        // Only include attendance if this student is in the selected year
         if (filteredStudentIds.has(sid)) {
           const periods = Number(record.periods_present ?? 0);
-          const status = record.status ?? '';
-          attendanceMap[sid] = periods > 0 || status === 'Present';
+          // Convert periods count to boolean array
+          const periodsArray = Array(TOTAL_PERIODS).fill(false);
+          for (let i = 0; i < periods && i < TOTAL_PERIODS; i++) {
+            periodsArray[i] = true;
+          }
+          attendanceMap[sid] = periodsArray;
         }
       });
       setAttendance(attendanceMap);
@@ -103,27 +112,37 @@ const FacultyAttendance = () => {
     }
   }, [profile, selectedYear, selectedDate]);
 
-  const toggleAttendance = (studentId: string) => {
+  const getAttendanceStatus = (periodsArray: boolean[]) => {
+    const presentPeriods = periodsArray.filter(Boolean).length;
+    if (presentPeriods <= 3) return "absent";
+    if (presentPeriods === 4) return "half";
+    return "full";
+  };
+
+  const togglePeriod = (studentId: string, periodIndex: number) => {
     setAttendance((prev) => {
-      const newAttendance = { ...prev };
-      // Toggle only this specific student
-      newAttendance[studentId] = !newAttendance[studentId];
-      return newAttendance;
+      const current = prev[studentId] ?? Array(TOTAL_PERIODS).fill(false);
+      const updated = [...current];
+      updated[periodIndex] = !updated[periodIndex];
+      return {
+        ...prev,
+        [studentId]: updated,
+      };
     });
   };
 
   const markAllPresent = () => {
-    const newAttendance: Record<string, boolean> = {};
+    const newAttendance: Record<string, boolean[]> = {};
     students.forEach((student) => {
-      newAttendance[student._id] = true;  // Use _id
+      newAttendance[student._id] = Array(TOTAL_PERIODS).fill(true);
     });
     setAttendance(newAttendance);
   };
 
   const markAllAbsent = () => {
-    const newAttendance: Record<string, boolean> = {};
+    const newAttendance: Record<string, boolean[]> = {};
     students.forEach((student) => {
-      newAttendance[student._id] = false;  // Use _id
+      newAttendance[student._id] = Array(TOTAL_PERIODS).fill(false);
     });
     setAttendance(newAttendance);
   };
@@ -137,17 +156,22 @@ const FacultyAttendance = () => {
       const month = selectedDate.getMonth() + 1;
       const year = selectedDate.getFullYear();
 
-      // Prepare attendance records (use periods_present/total_periods expected by server)
-      const totalPeriods = 7;
-      const records = students.map((student) => ({
-        student_id: student._id,
-        date: dateStr,
-        month,
-        year,
-        periods_present: attendance[student._id] ? totalPeriods : 0,
-        total_periods: totalPeriods,
-        marked_by: profile.id,
-      }));
+      // Prepare attendance records with period attendance
+      const records = students.map((student) => {
+        const periodsArray = attendance[student._id] ?? Array(TOTAL_PERIODS).fill(false);
+        const periodsCounted = periodsArray.filter(Boolean).length;
+        const status = getAttendanceStatus(periodsArray);
+        return {
+          student_id: student._id,
+          date: dateStr,
+          month,
+          year,
+          periods_present: periodsCounted,
+          total_periods: TOTAL_PERIODS,
+          status: status,
+          marked_by: profile.id,
+        };
+      });
 
       const { res, data } = await fetchJson("/api/attendance", {
         method: "POST",
@@ -190,8 +214,18 @@ const FacultyAttendance = () => {
     return day <= 15 ? "Part 1 (1-15)" : "Part 2 (16-30/31)";
   };
 
-  const presentCount = Object.values(attendance).filter(Boolean).length;
-  const absentCount = students.length - presentCount;
+  const fullDayCount = Object.values(attendance).filter(periodsArray => {
+    const count = periodsArray.filter(Boolean).length;
+    return count > 5;
+  }).length;
+  const halfDayCount = Object.values(attendance).filter(periodsArray => {
+    const count = periodsArray.filter(Boolean).length;
+    return count >= 3 && count <= 5;
+  }).length;
+  const absentCount = Object.values(attendance).filter(periodsArray => {
+    const count = periodsArray.filter(Boolean).length;
+    return count < 3;
+  }).length;
 
   if (authLoading || loading) {
     return (
@@ -207,9 +241,9 @@ const FacultyAttendance = () => {
       <PageWrapper>
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Attendance Management</h1>
+          <h1 className="text-3xl font-bold mb-2">Periods-based Attendance Management</h1>
           <p className="text-muted-foreground">
-            Mark daily attendance for students
+            Mark attendance by periods per day (0-{TOTAL_PERIODS} periods)
           </p>
         </div>
 
@@ -283,49 +317,57 @@ const FacultyAttendance = () => {
               Mark All Absent
             </Button>
             <div className="flex-1" />
-            <div className="flex items-center gap-4 text-sm">
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-success" />
-                Present: {presentCount}
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-destructive" />
-                Absent: {absentCount}
-              </span>
-            </div>
           </div>
         </GlassCard>
 
-        {/* Attendance Grid */}
+        {/* Attendance List */}
         <GlassCard className="p-6">
           {students.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                {students.map((student) => (
-                  <button
-                    key={student._id}
-                    onClick={() => toggleAttendance(student._id)}
-                    className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                      attendance[student._id]
-                        ? "bg-success/10 border-success/30 hover:bg-success/20"
-                        : "bg-destructive/10 border-destructive/30 hover:bg-destructive/20"
-                    }`}
-                  >
-                    <div className="flex items-center justify-center mb-2">
-                      {attendance[student._id] ? (
-                        <Check className="w-6 h-6 text-success" />
-                      ) : (
-                        <X className="w-6 h-6 text-destructive" />
-                      )}
+              <div className="space-y-2">
+                {students.map((student) => {
+                  const periodsArray = attendance[student._id] ?? Array(TOTAL_PERIODS).fill(false);
+                  const periodsCounted = periodsArray.filter(Boolean).length;
+                  const status = getAttendanceStatus(periodsArray);
+                  const rowBg =
+                    status === "full" ? "bg-success/10" :
+                    status === "half" ? "bg-yellow-500/10" :
+                    "bg-destructive/10";
+
+                  return (
+                    <div
+                      key={student._id}
+                      className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg ${rowBg}`}
+                    >
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+                        <p className="font-medium text-sm">{student.roll_number}</p>
+                        <p className="text-xs text-muted-foreground">{student.branch_code}</p>
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                        <span className="text-sm font-semibold">
+                          {periodsCounted}/{TOTAL_PERIODS}
+                        </span>
+                        <div className="mt-1 sm:mt-0 overflow-x-auto">
+                          <div className="inline-flex space-x-1">
+                            {periodsArray.map((isPeriodPresent, periodIndex) => (
+                              <button
+                                key={periodIndex}
+                                onClick={() => togglePeriod(student._id, periodIndex)}
+                                className={`py-1 px-2 rounded text-xs font-semibold transition-all duration-200 border ${
+                                  isPeriodPresent
+                                    ? "bg-success/80 border-success text-white"
+                                    : "bg-muted border-border text-muted-foreground hover:bg-muted/70"
+                                }`}
+                              >
+                                P{periodIndex + 1}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <p className="font-medium text-sm truncate">
-                      {student.roll_number}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {student.branch_code}
-                    </p>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="mt-6 pt-6 border-t border-border flex justify-end">
