@@ -674,7 +674,8 @@ const FacultyMarks = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
+                  {/* Hide 'All' option when viewing all students to force specific type selection */}
+                  {selectedStudent !== "all" && <SelectItem value="all">All</SelectItem>}
                   <SelectItem value="theory">Theory</SelectItem>
                   <SelectItem value="lab">Lab</SelectItem>
                 </SelectContent>
