@@ -371,15 +371,6 @@ const FacultyMarks = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {students
-                        .filter((student) => {
-                          // Filter by year-to-semester mapping: Year 1 → 1-2, Year 2 → 3-4, Year 3 → 5-6
-                          const year = student.year_of_study;
-                          const sem = Number(selectedSemester);
-                          if (year === 1) return sem === 1 || sem === 2;
-                          if (year === 2) return sem === 3 || sem === 4;
-                          if (year === 3) return sem === 5 || sem === 6;
-                          return false;
-                        })
                         .sort((a, b) => a.roll_number.localeCompare(b.roll_number))
                         .map((student) => (
                           <SelectItem key={student._id} value={student._id}>
