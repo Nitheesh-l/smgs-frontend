@@ -37,15 +37,18 @@ const AdminDashboard = () => {
     fullName: "",
   });
 
-  // Check if user is admin
+  // Check if user is admin - redirect immediately if not
   useEffect(() => {
-    if (!authLoading && profile?.role !== "admin") {
-      toast.error("Unauthorized: Only admins can access this page");
-      navigate("/");
+    if (!authLoading) {
+      if (!profile || profile.role !== "admin") {
+        toast.error("Unauthorized: Only admins can access this page");
+        navigate("/");
+      }
     }
   }, [profile, authLoading, navigate]);
 
-  if (authLoading || !profile) {
+  // Show loading while checking auth, or if not admin redirect in progress
+  if (authLoading || !profile || profile.role !== "admin") {
     return (
       <div className="min-h-screen mesh-gradient flex items-center justify-center">
         <Loader size="lg" text="Loading..." />

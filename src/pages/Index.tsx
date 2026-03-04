@@ -34,7 +34,7 @@ const Index = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              {profile?.role === "admin" ? (
+              {profile?.role === "admin" && (
                 <Link to="/admin">
                   <Button className="btn-gradient px-8 py-6 text-lg rounded-2xl group">
                     <Shield className="mr-2 w-5 h-5" />
@@ -42,25 +42,24 @@ const Index = () => {
                     <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
-              ) : (
-                <>
-                  <Link to="/auth?type=faculty">
-                    <Button className="btn-gradient px-8 py-6 text-lg rounded-2xl group">
-                      Faculty Login
-                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </Link>
-                  <Link to="/auth?type=student">
-                    <Button
-                      variant="outline"
-                      className="px-8 py-6 text-lg rounded-2xl border-2 hover:bg-muted group"
-                    >
-                      Student Login
-                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </Link>
-                </>
               )}
+
+              <Link to="/auth?type=faculty">
+                <Button className="btn-gradient px-8 py-6 text-lg rounded-2xl group">
+                  Faculty Login
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+
+              <Link to="/auth?type=student">
+                <Button
+                  variant="outline"
+                  className="px-8 py-6 text-lg rounded-2xl border-2 hover:bg-muted group"
+                >
+                  Student Login
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
             </div>
           </div>
 

@@ -50,17 +50,6 @@ const Auth = () => {
     }
   }, [searchParams]);
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user && profile && !authLoading) {
-      if (profile.role === "faculty") {
-        navigate("/faculty");
-      } else {
-        navigate("/student");
-      }
-    }
-  }, [user, profile, authLoading, navigate]);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
