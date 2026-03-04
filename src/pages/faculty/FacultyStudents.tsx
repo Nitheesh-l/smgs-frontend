@@ -309,6 +309,7 @@ const FacultyStudents = () => {
                 <div className="p-4 bg-muted rounded mb-4">
                   <h3 className="font-semibold mb-2">Credentials</h3>
                   <p>Roll Number: <strong>{editingStudent.roll_number}</strong></p>
+                  <p className="text-sm text-muted-foreground">Password is hidden for security.</p>
                   <Button
                     variant="outline"
                     size="sm"
