@@ -217,31 +217,12 @@ const Auth = () => {
             </button>
           </div>
 
-          {/* Login/Signup Toggle (only for faculty) */}
+          {/* Faculty can only login, not signup */}
           {userType === "faculty" && (
-            <div className="flex gap-2 mb-6 p-1 bg-muted rounded-xl">
-              <button
-                type="button"
-                onClick={() => setIsLogin(true)}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                  isLogin
-                    ? "bg-card shadow-md text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsLogin(false)}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                  !isLogin
-                    ? "bg-card shadow-md text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Signup
-              </button>
+            <div className="mb-6 p-3 bg-blue/10 rounded-lg border border-blue/20">
+              <p className="text-sm text-foreground">
+                <strong>Faculty:</strong> Only administrators can create faculty accounts. Contact your admin to register.
+              </p>
             </div>
           )}
 
