@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
+// Admin Pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+
 // Faculty Pages
 import FacultyDashboard from "./pages/faculty/FacultyDashboard";
 import FacultyStudents from "./pages/faculty/FacultyStudents";
@@ -32,6 +35,9 @@ const App = () => (
             {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminDashboard />} />
 
             {/* Faculty Routes */}
             <Route path="/faculty" element={<FacultyDashboard />} />
