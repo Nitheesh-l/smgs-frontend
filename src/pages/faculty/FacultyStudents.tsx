@@ -70,8 +70,8 @@ const FacultyStudents = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(1);
   const [showPassword, setShowPassword] = useState(false);
-  const [showResetDialog, setShowResetDialog] = useState(false);
-  const [resetPassword, setResetPassword] = useState("");
+  // reset password UI removed per request
+  // reset password state removed
   const [formData, setFormData] = useState({
     roll_number: "",
     full_name: "",
@@ -211,7 +211,7 @@ const FacultyStudents = () => {
     setFormData({
       roll_number: student.roll_number,
       full_name: student.full_name ,
-      password: "", // Leave password empty - let user type new one if they want to change
+      password: ".......", // Leave password empty - let user type new one if they want to change
       year_of_study: student.year_of_study,
       gender: student.gender,
       phone_number: student.phone_number || "",
@@ -220,31 +220,7 @@ const FacultyStudents = () => {
     setShowPassword(false); // Reset password visibility when opening edit
     setIsDialogOpen(true);
   };
-  const handleResetPassword = async () => {
-    if (!editingStudent) return;
-    if (!resetPassword) {
-      toast.error("New password cannot be empty");
-      return;
-    }
-
-    try {
-      const { res, data } = await fetchJson(`/api/students/${editingStudent._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: resetPassword }),
-      });
-      if (!res.ok) {
-        toast.error(data?.error || "Failed to reset password");
-      } else {
-        toast.success("Password updated");
-        setShowResetDialog(false);
-        setResetPassword("");
-      }
-    } catch (e) {
-      console.error("Reset password error", e);
-      toast.error("Failed to reset password");
-    }
-  };
+  // password reset logic has been removed
   const resetForm = () => {
     setFormData({
       roll_number: "",
@@ -310,14 +286,6 @@ const FacultyStudents = () => {
                   <h3 className="font-semibold mb-2">Credentials</h3>
                   <p>Roll Number: <strong>{editingStudent.roll_number}</strong></p>
                   <p className="text-sm text-muted-foreground">Password is hidden for security.</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowResetDialog(true)}
-                    className="mt-2"
-                  >
-                    Reset Password
-                  </Button>
                 </div>
               )}
 
@@ -474,47 +442,7 @@ const FacultyStudents = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Reset password dialog */}
-          <Dialog
-            open={showResetDialog}
-            onOpenChange={setShowResetDialog}
-          >
-            <DialogContent className="sm:max-w-sm">
-              <DialogHeader>
-                <DialogTitle>Reset Password</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 mt-4">
-                <div>
-                  <Label htmlFor="new_password">New Password</Label>
-                  <Input
-                    id="new_password"
-                    type="password"
-                    value={resetPassword}
-                    onChange={(e) => setResetPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="mt-1"
-                  />
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowResetDialog(false)}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    className="flex-1 btn-gradient"
-                    onClick={handleResetPassword}
-                  >
-                    Update Password
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+
         </div>
 
         {/* Year Selector */}

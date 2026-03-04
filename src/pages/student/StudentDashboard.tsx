@@ -156,7 +156,7 @@ const StudentDashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">
-            Welcome, <span className="text-gradient">{profile?.full_name}</span>
+            Welcome, <span className="text-gradient">{studentData?.full_name || profile?.full_name}</span>
           </h1>
           <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
             <span>Roll No: <strong className="text-foreground">{studentData.roll_number}</strong></span>
