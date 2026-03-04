@@ -40,7 +40,7 @@ type Gender = "male" | "female" | "other";
 interface Student {
   _id: string;  // ✅ Change from 'id' to '_id'
   roll_number: string;
-  full_name?: string | null; // added full_name from profile lookup
+  full_name: string | null; // added full_name from profile lookup
   year_of_study: number;
   gender: Gender;
   phone_number: string | null;
@@ -281,13 +281,7 @@ const FacultyStudents = () => {
                 </DialogTitle>
               </DialogHeader>
 
-              {editingStudent && (
-                <div className="p-4 bg-muted rounded mb-4">
-                  <h3 className="font-semibold mb-2">Credentials</h3>
-                  <p>Roll Number: <strong>{editingStudent.roll_number}</strong></p>
-                  <p className="text-sm text-muted-foreground">Password is hidden for security.</p>
-                </div>
-              )}
+
 
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div>
