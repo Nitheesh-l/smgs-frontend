@@ -29,7 +29,7 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const { signIn, signUp, user, profile, loading: authLoading } = useAuth();
 
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin] = useState(true); // Always login mode
   const [userType, setUserType] = useState<UserType>("student");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -75,47 +75,23 @@ const Auth = () => {
     setErrors({});
 
     try {
-      if (isLogin) {
-        // For student login with roll number
-        if (userType === "student" && formData.rollNumber) {
-          if (!formData.rollNumber || !formData.password) {
-            setErrors({
-              rollNumber: formData.rollNumber ? "" : "Roll number required",
-              password: formData.password ? "" : "Password required",
-            });
-            setLoading(false);
-            return;
-          }
-
-          const { error } = await signIn(
-            formData.email,
-            formData.password,
-            userType,
-            formData.rollNumber
-          );
-          if (error) {
-            toast.error(error.message || "Invalid credentials");
-            setLoading(false);
-            return;
-          }
-
-          toast.success("Login successful!");
-          return;
-        }
-
-        // For faculty login with email
-        const result = loginSchema.safeParse(formData);
-        if (!result.success) {
-          const fieldErrors: Record<string, string> = {};
-          result.error.errors.forEach((err) => {
-            fieldErrors[err.path[0]] = err.message;
+      // For student login with roll number
+      if (userType === "student" && formData.rollNumber) {
+        if (!formData.rollNumber || !formData.password) {
+          setErrors({
+            rollNumber: formData.rollNumber ? "" : "Roll number required",
+            password: formData.password ? "" : "Password required",
           });
-          setErrors(fieldErrors);
           setLoading(false);
           return;
         }
 
-        const { error } = await signIn(formData.email, formData.password, userType);
+        const { error } = await signIn(
+          formData.email,
+          formData.password,
+          userType,
+          formData.rollNumber
+        );
         if (error) {
           toast.error(error.message || "Invalid credentials");
           setLoading(false);
@@ -123,35 +99,29 @@ const Auth = () => {
         }
 
         toast.success("Login successful!");
-      } else {
-        const result = signupSchema.safeParse(formData);
-        if (!result.success) {
-          const fieldErrors: Record<string, string> = {};
-          result.error.errors.forEach((err) => {
-            fieldErrors[err.path[0]] = err.message;
-          });
-          setErrors(fieldErrors);
-          setLoading(false);
-          return;
-        }
-
-
-        
-        const { error } = await signUp(
-          formData.email,
-          formData.password,
-          formData.fullName,
-          userType
-        );
-        if (error) {
-          toast.error(error.message || "Sign up failed");
-          setLoading(false);
-          return;
-        }
-
-        toast.success("Registration successful! Please check your email to verify your account.");
-        setIsLogin(true);
+        return;
       }
+
+      // For faculty login with email
+      const result = loginSchema.safeParse(formData);
+      if (!result.success) {
+        const fieldErrors: Record<string, string> = {};
+        result.error.errors.forEach((err) => {
+          fieldErrors[err.path[0]] = err.message;
+        });
+        setErrors(fieldErrors);
+        setLoading(false);
+        return;
+      }
+
+      const { error } = await signIn(formData.email, formData.password, userType);
+      if (error) {
+        toast.error(error.message || "Invalid credentials");
+        setLoading(false);
+        return;
+      }
+
+      toast.success("Login successful!");
     } catch (error) {
       console.error("Auth submit error:", error);
       toast.error("Something went wrong. Please try again.");
@@ -239,11 +209,6 @@ const Auth = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && userType === "faculty" && (
-              <div>
-                <Label htmlFor="fullName" className="text-sm font-medium">
-                  Full Name
-                </Label>
                 <div className="relative mt-1">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -342,34 +307,9 @@ const Auth = () => {
               disabled={loading}
               className="w-full btn-gradient py-6 rounded-xl"
             >
-              {loading ? (
-                <Loader size="sm" />
-              ) : isLogin ? (
-                "Sign In"
-              ) : (
-                "Create Account"
-              )}
+              {loading ? <Loader size="sm" /> : "Sign In"}
             </Button>
           </form>
-
-          {/* Toggle Auth Mode - Only show for Faculty */}
-          {userType === "faculty" && (
-            <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setErrors({});
-                  }}
-                  className="text-primary font-medium hover:underline"
-                >
-                  {isLogin ? "Register" : "Sign In"}
-                </button>
-              </p>
-            </div>
-          )}
 
           {/* Info for students */}
           {userType === "student" && (
