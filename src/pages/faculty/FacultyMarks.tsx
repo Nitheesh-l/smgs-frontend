@@ -104,52 +104,11 @@ const FacultyMarks = () => {
   const [selectedStudent, setSelectedStudent] = useState<string>("all");
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
 
-  // combine internal+external for theory and lab when Subject Type is 'all' or matches subject type
-  // if a specific student is selected, show entries separately
-  const displayMarks = useMemo<(Mark & { combined?: boolean })[]>(() => {
-    if (selectedStudent !== "all") {
-      return marks;
-    }
-
-    // group by student + subject type when allowed (theory/lab), otherwise keep per exam_type
-    const map = new Map<string, (Mark & { count: number })>();
-    marks.forEach((m) => {
-      const subj = subjects.find((s) => s._id === m.subject_id);
-      const subjType = subj?.type;
-      const shouldCombine = subjType && (subjType === "theory" || subjType === "lab") && (selectedSubjectType === "all" || selectedSubjectType === subjType);
-      const key = shouldCombine ? `${m.student_id}-${m.subject_id}-${subjType}` : `${m.student_id}-${m.subject_id}-${m.exam_type}`;
-
-      if (!map.has(key)) {
-        map.set(key, { ...m, count: 1 });
-      } else {
-        const existing = map.get(key)!;
-        existing.marks_obtained += m.marks_obtained;
-        existing.total_marks += m.total_marks;
-        existing.count += 1;
-      }
-    });
-
-    const result: (Mark & { combined?: boolean })[] = [];
-    map.forEach((m) => {
-      const subj = subjects.find((s) => s._id === m.subject_id);
-      const subjType = subj?.type;
-      if (m.count > 1 && (subjType === "theory" || subjType === "lab")) {
-        // combine internal+external into a 100-mark line
-        const percent = (m.marks_obtained / m.total_marks) * 100;
-        const label = subjType ? `${subjType.charAt(0).toUpperCase() + subjType.slice(1)} - Combined` : "Combined";
-        result.push({
-          ...m,
-          marks_obtained: parseFloat(percent.toFixed(1)),
-          total_marks: 100,
-          subject_name: (m.subject_name || "") + ` (${label})`,
-          combined: true,
-        });
-      } else {
-        result.push(m);
-      }
-    });
-    return result;
-  }, [marks, selectedSubjectType, subjects, selectedStudent]);
+  // Always show individual marks - no combining
+  // This ensures Edit/Delete actions are always available
+  const displayMarks = useMemo<Mark[]>(() => {
+    return marks;
+  }, [marks]);
   const [formData, setFormData] = useState({
     student_id: "",
     subject_id: "",
@@ -751,26 +710,24 @@ const FacultyMarks = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {!mark.combined && (
-                            <div className="flex gap-2 justify-end">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEdit(mark)}
-                                className="hover:bg-primary/10 hover:text-primary"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(mark)}
-                                className="hover:bg-destructive/10 hover:text-destructive"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(mark)}
+                              className="hover:bg-primary/10 hover:text-primary"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(mark)}
+                              className="hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
