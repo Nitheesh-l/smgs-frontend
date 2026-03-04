@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Plus, Search, Edit, Trash2, Users, Phone, User } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Users, Phone, User, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 
 type Gender = "male" | "female" | "other";
@@ -69,6 +69,7 @@ const FacultyStudents = () => {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(1);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     roll_number: "",
     full_name: "",
@@ -119,7 +120,12 @@ const FacultyStudents = () => {
 
     try {
       // Custom validation: password required for new student, optional for edit
-      if (!editingStudent && !formData.password) {
+      // If editing and password is still the dots indicator, treat as no password change
+      const passwordToValidate = editingStudent 
+        ? formData.password === "•••••••••" ? "" : formData.password
+        : formData.password;
+
+      if (!editingStudent && !passwordToValidate) {
         toast.error("Password is required for new students");
         setSubmitting(false);
         return;
@@ -127,6 +133,7 @@ const FacultyStudents = () => {
 
       const result = studentSchema.safeParse({
         ...formData,
+        password: passwordToValidate,
         year_of_study: Number(formData.year_of_study),
       });
 
@@ -148,9 +155,9 @@ const FacultyStudents = () => {
         branch_code: formData.branch_code,
       };
 
-      // Only include password if provided
-      if (formData.password) {
-        payload.password = formData.password;
+      // Only include password if it's not the old indicator and not empty
+      if (passwordToValidate && passwordToValidate !== "•••••••••") {
+        payload.password = passwordToValidate;
       }
 
       const { res, data } = await fetchJson(url, {
@@ -205,12 +212,13 @@ const FacultyStudents = () => {
     setFormData({
       roll_number: student.roll_number,
       full_name: student.full_name || "",
-      password: "",
+      password: student.profile_id ? "•••••••••" : "", // Show indicator of existing password
       year_of_study: student.year_of_study,
       gender: student.gender,
       phone_number: student.phone_number || "",
       branch_code: student.branch_code,
     });
+    setShowPassword(false); // Reset password visibility when opening edit
     setIsDialogOpen(true);
   };
 
@@ -225,6 +233,7 @@ const FacultyStudents = () => {
       branch_code: "CS",
     });
     setEditingStudent(null);
+    setShowPassword(false);
   };
 
   const filteredStudents = students.filter(
@@ -246,12 +255,12 @@ const FacultyStudents = () => {
       <GlassNav role="faculty" userName={profile?.full_name} />
       <PageWrapper>
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Student Management</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-3xl font-bold mb-2">Student Details</h1>
+            {/* <p className="text-muted-foreground">
               Manage student registrations and details
-            </p>
+            </p> */}
           </div>
           <Dialog
             open={isDialogOpen}
@@ -283,6 +292,7 @@ const FacultyStudents = () => {
                     }
                     placeholder="e.g., CS2021001"
                     className="mt-1"
+                    required
                   />
                 </div>
 
@@ -296,6 +306,7 @@ const FacultyStudents = () => {
                     }
                     placeholder="e.g., John Doe"
                     className="mt-1"
+                    required
                   />
                 </div>
 
@@ -303,16 +314,25 @@ const FacultyStudents = () => {
                   <Label htmlFor="password">
                     Password {editingStudent && <span className="text-xs text-muted-foreground">(Leave blank to keep current)</span>}
                   </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    placeholder={editingStudent ? "••••••••" : "Set initial password (min 6 characters)"}
-                    className="mt-1"
-                  />
+                  <div className="relative mt-1">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      placeholder={editingStudent && formData.password === "•••••••••" ? "Existing password - change if needed" : editingStudent ? "Leave blank to keep current" : "Set initial password (min 6 characters)"}
+                      required={!editingStudent}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -324,7 +344,7 @@ const FacultyStudents = () => {
                         setFormData({ ...formData, year_of_study: Number(value) })
                       }
                     >
-                      <SelectTrigger className="mt-1">
+                      <SelectTrigger className="mt-1" required>
                         <SelectValue placeholder="Select year" />
                       </SelectTrigger>
                       <SelectContent>
@@ -343,7 +363,7 @@ const FacultyStudents = () => {
                         setFormData({ ...formData, branch_code: value })
                       }
                     >
-                      <SelectTrigger className="mt-1">
+                      <SelectTrigger className="mt-1" required>
                         <SelectValue placeholder="Select branch" />
                       </SelectTrigger>
                       <SelectContent>
@@ -362,7 +382,7 @@ const FacultyStudents = () => {
                       setFormData({ ...formData, gender: value })
                     }
                   >
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger className="mt-1" required>
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>

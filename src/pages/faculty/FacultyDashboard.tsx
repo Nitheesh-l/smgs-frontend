@@ -72,13 +72,13 @@ const FacultyDashboard = () => {
       <GlassNav role="faculty" userName={profile?.full_name} />
       <PageWrapper>
         {/* Welcome Section */}
-        <div className="mb-8">
+        <div className="mb-8 mt-4">
           <h1 className="text-3xl font-bold mb-2">
             Welcome back, <span className="text-gradient">{profile?.full_name}</span>
           </h1>
-          <p className="text-muted-foreground">
+          {/* <p className="text-muted-foreground">
             Here's an overview of your student management system
-          </p>
+          </p> */}
         </div>
 
         {/* Year Selector */}

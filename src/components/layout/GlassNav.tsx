@@ -93,7 +93,7 @@ const GlassNav = ({ role, userName }: GlassNavProps) => {
 
           {/* User Info & Logout */}
           <div className="hidden md:flex items-center gap-4">
-            <Button
+            {/* <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/")}
@@ -101,7 +101,7 @@ const GlassNav = ({ role, userName }: GlassNavProps) => {
             >
               <Home className="w-4 h-4 mr-2" />
               Home
-            </Button>
+            </Button> */}
             {userName && (
               <span className="text-sm text-muted-foreground">
                 Welcome, <span className="font-semibold text-foreground">{userName}</span>
@@ -131,7 +131,7 @@ const GlassNav = ({ role, userName }: GlassNavProps) => {
         {mobileMenuOpen && (
           <div className="md:hidden mt-4 pt-4 border-t border-border">
             <div className="flex flex-col gap-2">
-              <button
+              {/* <button
                 onClick={() => {
                   navigate("/");
                   setMobileMenuOpen(false);
@@ -140,7 +140,7 @@ const GlassNav = ({ role, userName }: GlassNavProps) => {
               >
                 <Home className="w-4 h-4" />
                 Home
-              </button>
+              </button> */}
               {navItems.map((item) => (
                 <Link
                   key={item.href}

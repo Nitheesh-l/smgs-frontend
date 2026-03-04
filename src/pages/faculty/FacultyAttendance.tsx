@@ -12,10 +12,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchJson } from "@/utils/api";
 import { toast } from "sonner";
-import { Calendar, Check, X, Save, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Check, X, Save, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Student {
   _id: string;  // ✅ Correct
@@ -39,6 +47,7 @@ const FacultyAttendance = () => {
   const [saving, setSaving] = useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(1);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
   const TOTAL_PERIODS = 7;
 
   useEffect(() => {
@@ -240,11 +249,11 @@ const FacultyAttendance = () => {
       <GlassNav role="faculty" userName={profile?.full_name} />
       <PageWrapper>
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Periods-based Attendance Management</h1>
-          <p className="text-muted-foreground">
+        <div className="mb-8 mt-4">
+          <h1 className="text-3xl font-bold mb-2">Periods-based Attendance </h1>
+          {/* <p className="text-muted-foreground">
             Mark attendance by periods per day (0-{TOTAL_PERIODS} periods)
-          </p>
+          </p> */}
         </div>
 
         {/* Controls */}
@@ -261,7 +270,31 @@ const FacultyAttendance = () => {
               </Button>
               <div className="text-center">
                 <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Calendar className="w-5 h-5 text-primary" />
+                  <Dialog open={showCalendar} onOpenChange={setShowCalendar}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-auto p-1">
+                        <CalendarIcon className="w-5 h-5 text-primary hover:text-primary/80" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="w-auto p-4">
+                      <DialogHeader>
+                        <DialogTitle>Select Date</DialogTitle>
+                      </DialogHeader>
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          if (date) {
+                            setSelectedDate(date);
+                            setShowCalendar(false);
+                          }
+                        }}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("2020-01-01")
+                        }
+                      />
+                    </DialogContent>
+                  </Dialog>
                   {formatDate(selectedDate)}
                 </div>
                 <p className="text-sm text-muted-foreground">

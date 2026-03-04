@@ -33,7 +33,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { fetchJson } from "@/utils/api";
 import { toast } from "sonner";
-import { Plus, BookOpen, Filter, Trash2 } from "lucide-react";
+import { Plus, BookOpen, Filter, Trash2, Edit } from "lucide-react";
 
 // exam types are no longer exposed in faculty UI; keep type for backend compatibility if needed
 // but most UI logic handles combined marks by subject/subject type.
@@ -100,9 +100,9 @@ const FacultyMarks = () => {
   });
   const [selectedSemester, setSelectedSemester] = useState("1");
   const [selectedYear, setSelectedYear] = useState("1");
-  // exam type no longer used for filtering; backend receives a default based on subject
   const [selectedSubjectType, setSelectedSubjectType] = useState<"all" | "theory" | "lab">("all");
   const [selectedStudent, setSelectedStudent] = useState<string>("all");
+  const [editingMark, setEditingMark] = useState<Mark | null>(null);
 
   // combine internal+external for theory and lab when Subject Type is 'all' or matches subject type
   // if a specific student is selected, show entries separately
@@ -244,8 +244,12 @@ const FacultyMarks = () => {
         : subj?.type === "lab"
         ? "lab_internal"
         : "unit_test_internal";
-      const { res, data } = await fetchJson("/api/marks", {
-        method: "POST",
+      
+      const method = editingMark ? "PUT" : "POST";
+      const url = editingMark ? `/api/marks/${editingMark._id}` : "/api/marks";
+      
+      const { res, data } = await fetchJson(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           student_id: formData.student_id,
@@ -265,8 +269,9 @@ const FacultyMarks = () => {
         return;
       }
 
-      toast.success("Marks saved successfully");
+      toast.success(editingMark ? "Marks updated successfully" : "Marks saved successfully");
       setIsDialogOpen(false);
+      setEditingMark(null);
       setFormData({
         student_id: "",
         subject_id: "",
@@ -305,6 +310,19 @@ const FacultyMarks = () => {
     }
   };
 
+  const handleEdit = (mark: Mark) => {
+    setEditingMark(mark);
+    setFormData({
+      student_id: mark.student_id,
+      subject_id: mark.subject_id,
+      marks_obtained: String(mark.marks_obtained),
+      total_marks: String(mark.total_marks),
+      exam_type: mark.exam_type,
+      academicYear: mark.academic_year,
+    });
+    setIsDialogOpen(true);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen mesh-gradient flex items-center justify-center">
@@ -318,12 +336,12 @@ const FacultyMarks = () => {
       <GlassNav role="faculty" userName={profile?.full_name} />
       <PageWrapper>
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Marks Management</h1>
-            <p className="text-muted-foreground">
+            {/* <p className="text-muted-foreground">
               Enter and manage student exam marks
-            </p>
+            </p> */}
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -334,9 +352,9 @@ const FacultyMarks = () => {
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Add Marks Entry</DialogTitle>
+                <DialogTitle>{editingMark ? "Edit Marks Entry" : "Add Marks Entry"}</DialogTitle>
                 <DialogDescription>
-                  Enter marks for a student in the selected semester and exam type.
+                  {editingMark ? "Update the marks for this student." : "Enter marks for a student in the selected semester and exam type."}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -743,14 +761,24 @@ const FacultyMarks = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           {!mark.combined && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(mark)}
-                              className="hover:bg-destructive/10 hover:text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEdit(mark)}
+                                className="hover:bg-primary/10 hover:text-primary"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(mark)}
+                                className="hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
