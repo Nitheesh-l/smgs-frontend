@@ -72,9 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data?.user) {
+        console.log("🔐 Backend returned user:", data.user);
         setProfile(data.user);
         localStorage.setItem('auth_user', JSON.stringify(data.user));
         toast.success('Signed in successfully');
+        console.log("✅ Profile updated in context");
       }
       return {};
     } catch (error) {

@@ -9,7 +9,7 @@ import Loader from "@/components/ui/Loader";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { fetchJson } from "@/utils/api";
-import { Shield, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Shield, Mail, Lock, User, ArrowLeft, LogOut } from "lucide-react";
 
 const addFacultySchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -25,7 +25,7 @@ interface FacultyForm {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, loading: authLoading, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [adminPassword, setAdminPassword] = useState("");
@@ -123,13 +123,25 @@ const AdminDashboard = () => {
     <div className="min-h-screen mesh-gradient p-4">
       {/* Header */}
       <div className="max-w-4xl mx-auto mb-8">
-        <button
-          onClick={() => navigate("/")}
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </button>
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => navigate("/")}
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </button>
+          <button
+            onClick={async () => {
+              await logout();
+              navigate("/auth");
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-destructive hover:bg-destructive/10 transition"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        </div>
 
         <div className="flex items-center gap-4 mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-primary shadow-glow">

@@ -11,6 +11,7 @@ import {
   ClipboardList,
   LayoutDashboard,
   BookOpen,
+  Home,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -92,6 +93,15 @@ const GlassNav = ({ role, userName }: GlassNavProps) => {
 
           {/* User Info & Logout */}
           <div className="hidden md:flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/")}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Home
+            </Button>
             {userName && (
               <span className="text-sm text-muted-foreground">
                 Welcome, <span className="font-semibold text-foreground">{userName}</span>
@@ -121,6 +131,16 @@ const GlassNav = ({ role, userName }: GlassNavProps) => {
         {mobileMenuOpen && (
           <div className="md:hidden mt-4 pt-4 border-t border-border">
             <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  navigate("/");
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <Home className="w-4 h-4" />
+                Home
+              </button>
               {navItems.map((item) => (
                 <Link
                   key={item.href}

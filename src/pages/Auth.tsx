@@ -34,6 +34,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -52,16 +53,29 @@ const Auth = () => {
 
   // Redirect after successful login based on role
   useEffect(() => {
-    if (user && profile && !authLoading && isLogin) {
+    console.log("🔍 Redirect check:", { user: !!user, profile: !!profile, authLoading, hasRedirected, role: profile?.role });
+    
+    if (hasRedirected) {
+      console.log("⚠️ Already redirected, skipping");
+      return;
+    }
+    
+    if (user && profile && !authLoading) {
+      console.log("✅ Conditions met, redirecting based on role:", profile.role);
+      setHasRedirected(true);
+      
       if (profile.role === "faculty") {
+        console.log("📍 Faculty redirecting to /faculty");
         navigate("/faculty");
       } else if (profile.role === "student") {
+        console.log("📍 Student redirecting to /student");
         navigate("/student");
       } else if (profile.role === "admin") {
-        navigate("/"); // Admin goes to home to see Faculty+Student login buttons
+        console.log("📍 Admin redirecting to /admin");
+        navigate("/admin");
       }
     }
-  }, [user, profile, authLoading, isLogin, navigate]);
+  }, [user, profile, authLoading, hasRedirected, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -121,6 +135,7 @@ const Auth = () => {
         return;
       }
 
+      console.log("✅ Faculty login successful, waiting for redirect...");
       toast.success("Login successful!");
     } catch (error) {
       console.error("Auth submit error:", error);
