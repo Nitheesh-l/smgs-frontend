@@ -327,14 +327,7 @@ const FacultyStudents = () => {
                       placeholder={editingStudent ? "Leave blank to keep current password" : "Set initial password (min 6 characters)"}
                       required={!editingStudent}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      title="Toggle password visibility"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                    
                   </div>
                 </div>
 
