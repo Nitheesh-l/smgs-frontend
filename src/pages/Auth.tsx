@@ -209,25 +209,7 @@ const Auth = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="relative mt-1">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="fullName"
-                    name="fullName"
-                    type="text"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    placeholder="Enter your full name"
-                    className="pl-10 input-glow"
-                  />
-                </div>
-                {errors.fullName && (
-                  <p className="text-destructive text-xs mt-1">{errors.fullName}</p>
-                )}
-              </div>
-            )}
-
-            {userType === "student" || (isLogin && userType === "faculty") ? (
+            {userType === "student" || userType === "faculty" ? (
               <div>
                 <Label htmlFor="rollNumber" className="text-sm font-medium">
                   {userType === "student" ? "Roll Number" : "Email"}
