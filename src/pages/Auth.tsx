@@ -50,6 +50,19 @@ const Auth = () => {
     }
   }, [searchParams]);
 
+  // Redirect after successful login based on role
+  useEffect(() => {
+    if (user && profile && !authLoading && isLogin) {
+      if (profile.role === "faculty") {
+        navigate("/faculty");
+      } else if (profile.role === "student") {
+        navigate("/student");
+      } else if (profile.role === "admin") {
+        navigate("/"); // Admin goes to home to see Faculty+Student login buttons
+      }
+    }
+  }, [user, profile, authLoading, isLogin, navigate]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import GlassCard from "@/components/ui/GlassCard";
 import { useAuth } from "@/hooks/useAuth";
-import { GraduationCap, Users, BookOpen, Calendar,ArrowLeft, ArrowRight, Sparkles, Shield } from "lucide-react";
+import { GraduationCap, Users, BookOpen, Calendar,ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 
 const Index = () => {
   const { profile, loading } = useAuth();
@@ -34,16 +34,6 @@ const Index = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              {profile?.role === "admin" && (
-                <Link to="/admin">
-                  <Button className="btn-gradient px-8 py-6 text-lg rounded-2xl group">
-                    <Shield className="mr-2 w-5 h-5" />
-                    Admin Dashboard
-                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-              )}
-
               <Link to="/auth?type=faculty">
                 <Button className="btn-gradient px-8 py-6 text-lg rounded-2xl group">
                   Faculty Login
