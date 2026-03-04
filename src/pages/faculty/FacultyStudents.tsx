@@ -119,11 +119,8 @@ const FacultyStudents = () => {
     setSubmitting(true);
 
     try {
-      // Custom validation: password required for new student, optional for edit
-      // If editing and password is still the dots indicator, treat as no password change
-      const passwordToValidate = editingStudent 
-        ? formData.password === "•••••••••" ? "" : formData.password
-        : formData.password;
+      // Password validation: required for new students, optional for edit
+      const passwordToValidate = formData.password;
 
       if (!editingStudent && !passwordToValidate) {
         toast.error("Password is required for new students");
@@ -155,8 +152,8 @@ const FacultyStudents = () => {
         branch_code: formData.branch_code,
       };
 
-      // Only include password if it's not the old indicator and not empty
-      if (passwordToValidate && passwordToValidate !== "•••••••••") {
+      // Only include password if provided
+      if (passwordToValidate) {
         payload.password = passwordToValidate;
       }
 
@@ -212,7 +209,7 @@ const FacultyStudents = () => {
     setFormData({
       roll_number: student.roll_number,
       full_name: student.full_name ,
-      password: student.profile_id ? "•••••••••" : "", // Show indicator of existing password
+      password: "", // Leave password empty - let user type new one if they want to change
       year_of_study: student.year_of_study,
       gender: student.gender,
       phone_number: student.phone_number || "",
@@ -312,7 +309,7 @@ const FacultyStudents = () => {
 
                 <div>
                   <Label htmlFor="password">
-                    Password {editingStudent && <span className="text-xs text-muted-foreground">(Click eye icon to view existing password)</span>}
+                    Password {editingStudent && <span className="text-xs text-muted-foreground">(Leave blank to keep current)</span>}
                   </Label>
                   <div className="relative mt-1">
                     <Input
@@ -322,14 +319,14 @@ const FacultyStudents = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
-                      placeholder={editingStudent && formData.password === "•••••••••" ? "Existing password - change if needed" : editingStudent ? "Leave blank to keep current" : "Set initial password (min 6 characters)"}
+                      placeholder={editingStudent ? "Leave blank to keep current password" : "Set initial password (min 6 characters)"}
                       required={!editingStudent}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      title={editingStudent ? "Click to view/hide password" : "Click to show/hide password"}
+                      title="Toggle password visibility"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
