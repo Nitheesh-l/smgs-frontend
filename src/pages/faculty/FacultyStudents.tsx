@@ -211,7 +211,7 @@ const FacultyStudents = () => {
     setEditingStudent(student);
     setFormData({
       roll_number: student.roll_number,
-      full_name: student.full_name || "",
+      full_name: student.full_name ,
       password: student.profile_id ? "•••••••••" : "", // Show indicator of existing password
       year_of_study: student.year_of_study,
       gender: student.gender,
@@ -297,7 +297,7 @@ const FacultyStudents = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="full_name">Full Name {editingStudent && <span className="text-xs text-muted-foreground">(Read-only)</span>}</Label>
+                  <Label htmlFor="full_name">Full Name</Label>
                   <Input
                     id="full_name"
                     value={formData.full_name}
@@ -307,7 +307,6 @@ const FacultyStudents = () => {
                     placeholder="e.g., John Doe"
                     className="mt-1"
                     required
-                    disabled={!!editingStudent}
                   />
                 </div>
 
