@@ -297,7 +297,7 @@ const FacultyStudents = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="full_name">Full Name</Label>
+                  <Label htmlFor="full_name">Full Name {editingStudent && <span className="text-xs text-muted-foreground">(Read-only)</span>}</Label>
                   <Input
                     id="full_name"
                     value={formData.full_name}
@@ -307,12 +307,13 @@ const FacultyStudents = () => {
                     placeholder="e.g., John Doe"
                     className="mt-1"
                     required
+                    disabled={!!editingStudent}
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="password">
-                    Password {editingStudent && <span className="text-xs text-muted-foreground">(Leave blank to keep current)</span>}
+                    Password {editingStudent && <span className="text-xs text-muted-foreground">(Click eye icon to view existing password)</span>}
                   </Label>
                   <div className="relative mt-1">
                     <Input
@@ -329,6 +330,7 @@ const FacultyStudents = () => {
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      title={editingStudent ? "Click to view/hide password" : "Click to show/hide password"}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
