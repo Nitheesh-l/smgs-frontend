@@ -70,6 +70,8 @@ const FacultyStudents = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(1);
   const [showPassword, setShowPassword] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetPassword, setResetPassword] = useState("");
   const [formData, setFormData] = useState({
     roll_number: "",
     full_name: "",
@@ -218,7 +220,31 @@ const FacultyStudents = () => {
     setShowPassword(false); // Reset password visibility when opening edit
     setIsDialogOpen(true);
   };
+  const handleResetPassword = async () => {
+    if (!editingStudent) return;
+    if (!resetPassword) {
+      toast.error("New password cannot be empty");
+      return;
+    }
 
+    try {
+      const { res, data } = await fetchJson(`/api/students/${editingStudent._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: resetPassword }),
+      });
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to reset password");
+      } else {
+        toast.success("Password updated");
+        setShowResetDialog(false);
+        setResetPassword("");
+      }
+    } catch (e) {
+      console.error("Reset password error", e);
+      toast.error("Failed to reset password");
+    }
+  };
   const resetForm = () => {
     setFormData({
       roll_number: "",
@@ -278,6 +304,22 @@ const FacultyStudents = () => {
                   {editingStudent ? "Edit Student" : "Add New Student"}
                 </DialogTitle>
               </DialogHeader>
+
+              {editingStudent && (
+                <div className="p-4 bg-muted rounded mb-4">
+                  <h3 className="font-semibold mb-2">Credentials</h3>
+                  <p>Roll Number: <strong>{editingStudent.roll_number}</strong></p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowResetDialog(true)}
+                    className="mt-2"
+                  >
+                    Reset Password
+                  </Button>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div>
                   <Label htmlFor="roll_number">Roll Number</Label>
@@ -428,6 +470,48 @@ const FacultyStudents = () => {
                   </Button>
                 </div>
               </form>
+            </DialogContent>
+          </Dialog>
+
+          {/* Reset password dialog */}
+          <Dialog
+            open={showResetDialog}
+            onOpenChange={setShowResetDialog}
+          >
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Reset Password</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div>
+                  <Label htmlFor="new_password">New Password</Label>
+                  <Input
+                    id="new_password"
+                    type="password"
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowResetDialog(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    className="flex-1 btn-gradient"
+                    onClick={handleResetPassword}
+                  >
+                    Update Password
+                  </Button>
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
         </div>

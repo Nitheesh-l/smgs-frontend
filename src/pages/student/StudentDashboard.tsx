@@ -20,6 +20,8 @@ const StudentDashboard = () => {
     avgMarks: 0,
     totalExams: 0,
   });
+  const [showChangeDialog, setShowChangeDialog] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     if (!authLoading && (!profile || profile.role !== "student")) {
@@ -123,6 +125,30 @@ const StudentDashboard = () => {
     );
   }
 
+  const handlePasswordChange = async () => {
+    if (!newPassword) {
+      toast.error("Please provide a new password");
+      return;
+    }
+    try {
+      const { res, data } = await fetchJson(`/api/students/${studentData._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to update password");
+      } else {
+        toast.success("Password changed successfully");
+        setShowChangeDialog(false);
+        setNewPassword("");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to change password");
+    }
+  };
+
   return (
     <>
       <GlassNav role="student" userName={profile?.full_name} />
@@ -139,6 +165,14 @@ const StudentDashboard = () => {
             <span>•</span>
             <span>{studentData.branch_code}</span>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => setShowChangeDialog(true)}
+          >
+            Change Password
+          </Button>
         </div>
 
         {/* Stats Grid */}
@@ -227,6 +261,45 @@ const StudentDashboard = () => {
             </div>
           </GlassCard>
         </div>
+
+        {/* Change Password Dialog */}
+        <Dialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Change Password</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label htmlFor="new_pass">New Password</Label>
+                <Input
+                  id="new_pass"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowChangeDialog(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1 btn-gradient"
+                  onClick={handlePasswordChange}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </PageWrapper>
     </>
   );
