@@ -1,76 +1,136 @@
-# Welcome to your Lovable project
+# SMGS Frontend
 
-## Project info
+This is a React + TypeScript + Vite frontend for the SMGS (Student Management System). It provides login, dashboards, and management interfaces for students, faculty, and admins.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Environment Setup
 
-## How can I edit this code?
+Create a `.env` file in `client/` with:
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```env
+VITE_API_BASE=http://localhost:5000
 ```
 
-**Edit a file directly in GitHub**
+For production (deployed backend), use the backend URL:
+```env
+VITE_API_BASE=https://your-backend-domain.com
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+> **Note:** Ensure `VITE_API_BASE` does NOT have a trailing slash.
 
-**Use GitHub Codespaces**
+## Development
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## What technologies are used for this project?
+2. Start development server:
+   ```bash
+   npm run dev
+   ```
+   Opens at `http://localhost:5173`
 
-This project is built with:
+## Features by Role
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Student
+- View dashboard with attendance, marks, and timetable
+- Check attendance record
+- View marks for different subjects
+- Personal profile
 
-Backend server
-- A minimal Express + MongoDB backend is available under the `server/` folder. It exposes `api/*` endpoints used by the frontend. See `server/README.md` for setup.
+### Faculty
+- Record attendance for students
+- Enter marks (unit tests, internals, externals, lab)
+- View class information
+- Manage students in their class
 
-## How can I deploy this project?
+### Admin
+- **Create faculty accounts** (via admin dashboard at `/admin`)
+- Manage all faculty and student accounts
+- View system statistics
+- Access all management features
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Admin Dashboard
 
-## Can I connect a custom domain to my Lovable project?
+Only admin accounts can access the admin dashboard. To use it:
 
-Yes, you can!
+1. **Log in** with admin credentials:
+   - Email: `admin@smgs.com`
+   - Password: `Admin@123456` (default, should be changed in production)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+2. **Access admin dashboard:**
+   - Click "Admin Dashboard" button on home page
+   - Or navigate to `/admin` directly
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+3. **Create faculty accounts:**
+   - Fill in faculty name, email, and temporary password
+   - Enter your admin password to verify
+   - System creates the faculty account
+   - Faculty can then log in and change password
+
+## Build
+
+```bash
+npm run build
+```
+
+Output is in `dist/`.
+
+## Testing
+
+```bash
+npm run test
+```
+
+## Deployment
+
+See `../DEPLOY.md` for detailed deployment instructions (Vercel, Render, Railway).
+
+### Key Environment Variables for Deployment
+
+- `VITE_API_BASE` - Backend server URL (set in platform UI, not in `.env`)
+  - Example: `https://smgs-backend-xxxxx.vercel.app`
+  - Must NOT end with `/`
+
+## Technology Stack
+
+- **Framework:** React 18 + TypeScript
+- **Build Tool:** Vite
+- **UI Components:** shadcn/ui (Tailwind CSS)
+- **State Management:** React Context (useAuth hook)
+- **HTTP Client:** Fetch API with custom wrapper (`src/utils/api.ts`)
+- **Routing:** React Router v6
+
+## Important Notes
+
+- **Faculty cannot self-register.** Only admins can create faculty accounts via the dashboard.
+- **Session tokens** are stored in localStorage; they persist between page reloads.
+- **CORS** is handled by backend; frontend requests are proxied through API utility.
+- **Responsive design** works on desktop, tablet, and mobile devices.
+
+## Troubleshooting
+
+### API calls fail with "Failed to load resource"
+- Check that `VITE_API_BASE` is set correctly and does NOT end with `/`
+- Verify backend is running or deployed
+- Check CORS settings on backend (should default to `*`)
+
+### Can't log in to admin account
+- Ensure backend seed script has been run: `cd ../server && npm run seed:admin`
+- Check that admin password has not been changed (default: `Admin@123456`)
+- Verify database connection (`MONGODB_URI` env var on backend)
+
+### "You don't have admin access" after login
+- Check that logged-in user's `role` is `admin` (in user profile in database)
+- Seed admin account again if role is incorrect
+
+## Backend Server
+
+A minimal Express + MongoDB backend is available under the `server/` folder. It exposes `api/*` endpoints used by the frontend.
+
+See [server/README.md](../server/README.md) for setup and API documentation.
+
+## License
+
+MIT
+
