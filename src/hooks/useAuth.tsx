@@ -12,12 +12,18 @@ export interface User {
   role: AppRole;
 }
 
+type AuthResult = {
+  error?: {
+    message: string;
+  };
+};
+
 interface AuthContextType {
   user: User | null;
   profile: User | null;
   loading: boolean;
-  signIn: (email: string, password: string, role?: string, rollNumber?: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string, role: AppRole) => Promise<void>;
+  signIn: (email: string, password: string, role?: string, rollNumber?: string) => Promise<AuthResult>;
+  signUp: (email: string, password: string, fullName: string, role: AppRole) => Promise<AuthResult>;
   logout: () => Promise<void>;
 }
 
@@ -44,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
-  const signIn = async (email: string, password: string, role?: string, rollNumber?: string) => {
+  const signIn = async (email: string, password: string, role?: string, rollNumber?: string): Promise<AuthResult> => {
     try {
       const body: any = { password };
       
@@ -78,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string, role: string) => {
+  const signUp = async (email: string, password: string, fullName: string, role: AppRole): Promise<AuthResult> => {
     try {
       const { res, data } = await fetchJson('/api/auth/signup', {
         method: 'POST',

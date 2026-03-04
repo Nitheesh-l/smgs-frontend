@@ -161,7 +161,6 @@ const Auth = () => {
               type="button"
               onClick={() => {
                 setUserType("student");
-                setIsLogin(true);
                 setErrors({});
               }}
               className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
@@ -176,7 +175,6 @@ const Auth = () => {
               type="button"
               onClick={() => {
                 setUserType("faculty");
-                setIsLogin(true);
                 setErrors({});
               }}
               className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${

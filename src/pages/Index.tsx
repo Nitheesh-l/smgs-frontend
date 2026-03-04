@@ -89,8 +89,8 @@ const Index = () => {
           {/* Badge */}
           <div className="flex justify-center mt-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border shadow-sm">
-              <Sparkles className="w-4 h-4 text-primary" />
               <ArrowLeft className="text-primary opacity-50"/><Sparkles className="w-4 h-4 text-primary" />
+              <Sparkles className="w-4 h-4 text-primary" />
               <Sparkles className="w-4 h-4 text-primary" />
               <Sparkles className="w-4 h-4 text-primary" /><ArrowRight className="text-primary opacity-50"/>
             </div>
