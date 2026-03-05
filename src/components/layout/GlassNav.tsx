@@ -111,7 +111,7 @@ const GlassNav = ({ role, userName }: GlassNavProps) => {
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="text-muted-foreground hover:text-destructive"
+              className=""
             >
               <LogOut className="w-4 h-4 mr-2" />
               Logout

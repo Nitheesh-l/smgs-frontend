@@ -357,7 +357,7 @@ const FacultyStudents = () => {
                         setFormData({ ...formData, year_of_study: Number(value) })
                       }
                     >
-                      <SelectTrigger className="mt-1" required>
+                      <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Select year" />
                       </SelectTrigger>
                       <SelectContent>
@@ -376,7 +376,7 @@ const FacultyStudents = () => {
                         setFormData({ ...formData, branch_code: value })
                       }
                     >
-                      <SelectTrigger className="mt-1" required>
+                      <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Select branch" />
                       </SelectTrigger>
                       <SelectContent>
@@ -395,7 +395,7 @@ const FacultyStudents = () => {
                       setFormData({ ...formData, gender: value })
                     }
                   >
-                    <SelectTrigger className="mt-1" required>
+                    <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
@@ -485,6 +485,7 @@ const FacultyStudents = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Roll Number</TableHead>
+                    <TableHead>Full Name</TableHead>
                     <TableHead>Year</TableHead>
                     <TableHead>Gender</TableHead>
                     <TableHead>Branch</TableHead>
@@ -498,6 +499,7 @@ const FacultyStudents = () => {
                       <TableCell className="font-medium">
                         {student.roll_number}
                       </TableCell>
+                      <TableCell>{student.full_name || "-"}</TableCell>
                       <TableCell>{student.year_of_study}</TableCell>
                       <TableCell>{student.gender}</TableCell>
                       <TableCell>{student.branch_code}</TableCell>

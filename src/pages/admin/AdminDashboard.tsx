@@ -25,6 +25,13 @@ const addFacultySchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
 });
 
+// Schema for editing - password is optional
+const editFacultySchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().optional(),
+  fullName: z.string().min(2, "Name must be at least 2 characters"),
+});
+
 interface FacultyForm {
   email: string;
   password: string;
@@ -140,11 +147,13 @@ const AdminDashboard = () => {
     setErrors({});
 
     try {
-      const result = addFacultySchema.safeParse(facultyForm);
+      // Use different schema based on edit vs create
+      const schema = editingFaculty ? editFacultySchema : addFacultySchema;
+      const result = schema.safeParse(facultyForm);
       if (!result.success) {
         const fieldErrors: Record<string, string> = {};
         result.error.errors.forEach((err) => {
-          fieldErrors[err.path[0]] = err.message;
+          fieldErrors[err.path[0] as string] = err.message;
         });
         setErrors(fieldErrors);
         setLoading(false);
@@ -158,8 +167,33 @@ const AdminDashboard = () => {
       }
 
       if (editingFaculty) {
-        // Update subject assignments only (full edit would need backend support)
-        toast.info("Subject assignment update feature is in development");
+        // Update faculty details
+        const { res: updateRes, data: updateData } = await fetchJson(`/api/profiles/${editingFaculty._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            full_name: facultyForm.fullName,
+            assigned_subjects: facultyForm.assignedSubjects,
+          }),
+        });
+
+        if (!updateRes.ok) {
+          toast.error(updateData?.error || "Failed to update faculty");
+          setLoading(false);
+          return;
+        }
+
+        toast.success("Faculty updated successfully");
+        setFacultyForm({ email: "", password: "", fullName: "", assignedSubjects: [] });
+        setAdminPassword("");
+        setShowForm(false);
+        setEditingFaculty(null);
+
+        // Reload faculty list
+        const { res: refRes, data: refData } = await fetchJson("/api/profiles/faculty/list");
+        if (refRes.ok) {
+          setFaculty(refData);
+        }
         setLoading(false);
         return;
       }

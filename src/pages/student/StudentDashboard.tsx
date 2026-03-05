@@ -310,7 +310,9 @@ const StudentDashboard = () => {
         </div>
 
         {/* Change Password Dialog */}
-        <Dialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>
+
+        <div>
+          <Dialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
               <DialogTitle>Change Password</DialogTitle>
@@ -347,6 +349,7 @@ const StudentDashboard = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </PageWrapper>
     </>
   );
