@@ -5,8 +5,13 @@ import PageWrapper from "@/components/layout/PageWrapper";
 import StatCard from "@/components/ui/StatCard";
 import GlassCard from "@/components/ui/GlassCard";
 import Loader from "@/components/ui/Loader";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchJson } from "@/utils/api";
+import { toast } from "sonner";
 import { Calendar, BookOpen, TrendingUp, Award } from "lucide-react";
 
 const StudentDashboard = () => {
