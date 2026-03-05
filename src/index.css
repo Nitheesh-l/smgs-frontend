@@ -53,7 +53,7 @@
     --glass-shadow: 238 84% 67% / 0.1;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(238 84% 67%), hsl(280 75% 60%));
+    --gradient-primary: linear-gradient(135deg, hsl(0, 0%, 4%), hsl(279, 89%, 4%));
     --gradient-accent: linear-gradient(135deg, hsl(172 66% 50%), hsl(199 89% 48%));
     --gradient-hero: linear-gradient(135deg, hsl(238 84% 67% / 0.1), hsl(172 66% 50% / 0.1));
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100% / 0.9), hsl(0 0% 100% / 0.7));

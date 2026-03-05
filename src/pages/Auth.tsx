@@ -53,25 +53,23 @@ const Auth = () => {
 
   // Redirect after successful login based on role
   useEffect(() => {
-    console.log("🔍 Redirect check:", { user: !!user, profile: !!profile, authLoading, hasRedirected, role: profile?.role });
+    console.log("Redirect check:", { user: !!user, profile: !!profile, authLoading, hasRedirected, role: profile?.role });
     
     if (hasRedirected) {
-      console.log("⚠️ Already redirected, skipping");
       return;
     }
     
     if (user && profile && !authLoading) {
-      console.log("✅ Conditions met, redirecting based on role:", profile.role);
+
       setHasRedirected(true);
       
       if (profile.role === "faculty") {
-        console.log("📍 Faculty redirecting to /faculty");
+        
         navigate("/faculty");
       } else if (profile.role === "student") {
-        console.log("📍 Student redirecting to /student");
         navigate("/student");
       } else if (profile.role === "admin") {
-        console.log("📍 Admin redirecting to /admin");
+        
         navigate("/admin");
       }
     }
@@ -135,7 +133,6 @@ const Auth = () => {
         return;
       }
 
-      console.log("✅ Faculty login successful, waiting for redirect...");
       toast.success("Login successful!");
     } catch (error) {
       console.error("Auth submit error:", error);
