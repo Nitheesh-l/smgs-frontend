@@ -117,7 +117,7 @@ const FacultyDashboard = () => {
             variant="accent"
           />
           <StatCard
-            title="Total Subjects"
+            title={`Subjects (Year ${selectedYear})`}
             value={stats.totalSubjects}
             icon={<BookOpen className="w-6 h-6" />}
             variant="warning"
