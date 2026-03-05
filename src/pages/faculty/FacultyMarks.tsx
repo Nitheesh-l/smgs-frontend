@@ -103,6 +103,7 @@ const FacultyMarks = () => {
   const [selectedSubjectType, setSelectedSubjectType] = useState<"all" | "theory" | "lab">("all");
   const [selectedStudent, setSelectedStudent] = useState<string>("all");
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
+  const [assignedSubjects, setAssignedSubjects] = useState<string[]>([]);
 
   // Always show individual marks - no combining
   // This ensures Edit/Delete actions are always available
@@ -134,12 +135,27 @@ const FacultyMarks = () => {
         setStudents(Array.isArray(studData) ? studData : []);
       }
 
+      // Get faculty's assigned subjects from profile
+      let activeAssignedSubjects = assignedSubjects;
+      if (assignedSubjects.length === 0 && profile?.id) {
+        const { res: profileRes, data: profileData } = await fetchJson(`/api/profiles?user_id=${profile.id}`);
+        if (profileRes.ok && profileData?.assigned_subjects) {
+          activeAssignedSubjects = profileData.assigned_subjects;
+          setAssignedSubjects(profileData.assigned_subjects);
+        }
+      }
+
       // Fetch subjects for selected semester
       const { res: subjRes, data: subjData } = await fetchJson("/api/subjects");
       if (subjRes.ok) {
-        const allSubjects = Array.isArray(subjData) ? subjData : [];
-        const filtered = allSubjects.filter((s: Subject) => s.semester === Number(selectedSemester));
-        setSubjects(filtered);
+        let allSubjects = Array.isArray(subjData) ? subjData : [];
+        // Filter by semester
+        allSubjects = allSubjects.filter((s: Subject) => s.semester === Number(selectedSemester));
+        // Filter by faculty's assigned subjects if any are assigned
+        if (activeAssignedSubjects.length > 0) {
+          allSubjects = allSubjects.filter((s: Subject) => activeAssignedSubjects.includes(s._id));
+        }
+        setSubjects(allSubjects);
       }
 
       // Fetch marks
@@ -158,6 +174,10 @@ const FacultyMarks = () => {
             .filter((s) => s.type === selectedSubjectType)
             .map((s) => s._id);
           marksList = marksList.filter((m) => allowed.includes(m.subject_id));
+        }
+        // filter by faculty's assigned subjects
+        if (activeAssignedSubjects.length > 0) {
+          marksList = marksList.filter((m) => activeAssignedSubjects.includes(m.subject_id));
         }
         setMarks(marksList);
       }
@@ -192,6 +212,13 @@ const FacultyMarks = () => {
 
       if (marksObtained > totalMarks) {
         toast.error("Marks obtained cannot exceed total marks");
+        setSubmitting(false);
+        return;
+      }
+
+      // Validate that faculty is marking for an assigned subject
+      if (assignedSubjects.length > 0 && !assignedSubjects.includes(formData.subject_id)) {
+        toast.error("You can only mark for subjects assigned to you");
         setSubmitting(false);
         return;
       }
@@ -359,6 +386,11 @@ const FacultyMarks = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {subjects.length === 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      No subjects assigned for this semester. Contact admin to assign subjects.
+                    </p>
+                  )}
                 </div>
 
                 <div>
