@@ -25,7 +25,7 @@ import { BookOpen, Filter, Award } from "lucide-react";
 
 // exam types are no longer shown to students; marks are combined by subject
 
-type ExamType = "unit_test_internal" | "unit_test_external" | "lab_internal" | "lab_external";
+type ExamType = "unit_test_internal_1" | "unit_test_internal_2" | "unit_test_external" | "lab_internal" | "lab_external";
 
 interface Mark {
   id: string;

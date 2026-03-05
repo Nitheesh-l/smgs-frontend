@@ -38,7 +38,7 @@ import { Plus, BookOpen, Filter, Trash2, Edit } from "lucide-react";
 // exam types are no longer exposed in faculty UI; keep type for backend compatibility if needed
 // but most UI logic handles combined marks by subject/subject type.
 
-type ExamType = "unit_test_internal" | "unit_test_external" | "lab_internal" | "lab_external";
+type ExamType = "unit_test_internal_1" | "unit_test_internal_2" | "unit_test_external" | "lab_internal" | "lab_external";
 
 interface Student {
   _id: string;
@@ -70,10 +70,11 @@ interface Mark {
 }
 
 const examTypeOptions: { value: ExamType; label: string }[] = [
-  { value: "unit_test_internal", label: "Unit Test (Internal)" },
-  { value: "unit_test_external", label: "Unit Test (External)" },
-  { value: "lab_internal", label: "Lab (Internal)" },
-  { value: "lab_external", label: "Lab (External)" },
+  { value: "unit_test_internal_1", label: "Unit Test Internal 1" },
+  { value: "unit_test_internal_2", label: "Unit Test Internal 2" },
+  { value: "unit_test_external", label: "Unit Test External" },
+  { value: "lab_internal", label: "Lab Internal" },
+  { value: "lab_external", label: "Lab External" },
 ];
 
 
@@ -115,7 +116,7 @@ const FacultyMarks = () => {
     subject_id: "",
     marks_obtained: "",
     total_marks: "100",
-    exam_type: "unit_test_internal",
+    exam_type: "unit_test_internal_1",
     academicYear: "2025-26",
   });
 
@@ -229,7 +230,7 @@ const FacultyMarks = () => {
         ? (formData as any).exam_type
         : subj?.type === "lab"
         ? "lab_internal"
-        : "unit_test_internal";
+        : "unit_test_internal_1";
       
       const method = editingMark ? "PUT" : "POST";
       const url = editingMark ? `/api/marks/${editingMark._id}` : "/api/marks";
@@ -263,7 +264,7 @@ const FacultyMarks = () => {
         subject_id: "",
         marks_obtained: "",
         total_marks: "100",
-        exam_type: "unit_test_internal",
+        exam_type: "unit_test_internal_1",
         academicYear: "2025-26",
       });
       fetchData();

@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   BookOpen,
   Home,
+  User,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +40,7 @@ const GlassNav = ({ role, userName }: GlassNavProps) => {
     { label: "Students", href: "/faculty/students", icon: <Users className="w-4 h-4" /> },
     { label: "Attendance", href: "/faculty/attendance", icon: <Calendar className="w-4 h-4" /> },
     { label: "Marks", href: "/faculty/marks", icon: <ClipboardList className="w-4 h-4" /> },
+    { label: "Profile", href: "/faculty/profile", icon: <User className="w-4 h-4" /> },
   ];
 
   const studentNavItems: NavItem[] = [

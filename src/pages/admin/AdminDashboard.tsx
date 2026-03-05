@@ -59,8 +59,6 @@ const AdminDashboard = () => {
   const [factsLoading, setFactsLoading] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
 
   const [facultyForm, setFacultyForm] = useState<FacultyForm>({
     email: "",
@@ -207,43 +205,6 @@ const AdminDashboard = () => {
   const getSubjectName = (subjectId: string) => {
     const subject = subjects.find((s) => s._id === subjectId);
     return subject ? `${subject.code} - ${subject.name}` : subjectId;
-  };
-
-  const handleEditFaculty = (fac: Faculty) => {
-    setEditingFaculty(fac);
-    setFacultyForm({
-      email: fac.email,
-      password: "",
-      fullName: fac.full_name,
-      assignedSubjects: fac.assigned_subjects || [],
-    });
-    setShowForm(true);
-  };
-
-  const handleDeleteFaculty = async (facId: string) => {
-    if (!window.confirm("Are you sure you want to delete this faculty member?")) return;
-    
-    setDeleting(facId);
-    try {
-      const { res, data } = await fetchJson(`/api/profiles/${facId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!res.ok) {
-        toast.error(data?.error || "Failed to delete faculty");
-        setDeleting(null);
-        return;
-      }
-
-      toast.success("Faculty member deleted successfully");
-      setFaculty(faculty.filter((f) => f._id !== facId));
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast.error("Failed to delete faculty member");
-    } finally {
-      setDeleting(null);
-    }
   };
 
   const handleEditFaculty = (fac: Faculty) => {

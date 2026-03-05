@@ -19,6 +19,9 @@ const StudentDashboard = () => {
     totalSubjects: 0,
     avgMarks: 0,
     totalExams: 0,
+    unitTestInternal1: 0,
+    unitTestInternal2: 0,
+    unitTestExternal: 0,
   });
   const [showChangeDialog, setShowChangeDialog] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -73,6 +76,21 @@ const StudentDashboard = () => {
             )
           : 0;
 
+        // Calculate marks breakdown
+        const unitTestInternal1Marks = marksList.filter((m: any) => m.exam_type === 'unit_test_internal_1');
+        const unitTestInternal2Marks = marksList.filter((m: any) => m.exam_type === 'unit_test_internal_2');
+        const unitTestExternalMarks = marksList.filter((m: any) => m.exam_type === 'unit_test_external');
+
+        const unitTestInternal1 = unitTestInternal1Marks.length > 0
+          ? Math.round(unitTestInternal1Marks.reduce((sum: number, m: any) => sum + (m.marks_obtained / m.total_marks) * 100, 0) / unitTestInternal1Marks.length)
+          : 0;
+        const unitTestInternal2 = unitTestInternal2Marks.length > 0
+          ? Math.round(unitTestInternal2Marks.reduce((sum: number, m: any) => sum + (m.marks_obtained / m.total_marks) * 100, 0) / unitTestInternal2Marks.length)
+          : 0;
+        const unitTestExternal = unitTestExternalMarks.length > 0
+          ? Math.round(unitTestExternalMarks.reduce((sum: number, m: any) => sum + (m.marks_obtained / m.total_marks) * 100, 0) / unitTestExternalMarks.length)
+          : 0;
+
         // Fetch subjects for student's year
         const { res: subjRes, data: subjectsData } = await fetchJson(`/api/subjects`);
         const subjectsList = Array.isArray(subjectsData) ? subjectsData : subjectsData?.data || [];
@@ -88,6 +106,9 @@ const StudentDashboard = () => {
           totalSubjects: studentSubjects.length,
           avgMarks,
           totalExams,
+          unitTestInternal1,
+          unitTestInternal2,
+          unitTestExternal,
         });
       } catch (error) {
         console.error("Error fetching student data:", error);
@@ -255,6 +276,32 @@ const StudentDashboard = () => {
                   style={{ width: `${stats.avgMarks}%` }}
                 />
               </div>
+              
+              {/* Unit Test Breakdown */}
+              <div className="space-y-2 pt-2 border-t border-border">
+                <h3 className="text-sm font-medium text-muted-foreground">Unit Test Performance</h3>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="text-center">
+                    <div className="font-medium">Internal 1</div>
+                    <div className={`text-lg font-bold ${stats.unitTestInternal1 >= 60 ? "text-primary" : "text-warning"}`}>
+                      {stats.unitTestInternal1 || '-'}%
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium">Internal 2</div>
+                    <div className={`text-lg font-bold ${stats.unitTestInternal2 >= 60 ? "text-primary" : "text-warning"}`}>
+                      {stats.unitTestInternal2 || '-'}%
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium">External</div>
+                    <div className={`text-lg font-bold ${stats.unitTestExternal >= 60 ? "text-primary" : "text-warning"}`}>
+                      {stats.unitTestExternal || '-'}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
               <p className="text-sm text-muted-foreground">
                 You have taken {stats.totalExams} exams across {stats.totalSubjects} subjects.
               </p>

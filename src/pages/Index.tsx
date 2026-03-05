@@ -19,9 +19,8 @@ const Index = () => {
         <div className="relative max-w-7xl mx-auto px-4 pt-20 pb-32">
           {/* Logo and Title */}
           <div className="text-center fade-in-up">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-primary shadow-glow mb-6 pulse-glow">
-              
-            </div>
+                          
+            
             <h1 className="text-5xl md:text-7xl font-bold mb-6">
               <span className="text-gradient">Student </span> Attendance & Academic
               <br />

@@ -2,7 +2,7 @@ CREATE TYPE public.app_role AS ENUM ('faculty', 'student');
 
 CREATE TYPE public.gender AS ENUM ('male', 'female', 'other');
 
-CREATE TYPE public.exam_type AS ENUM ('unit_test_internal', 'unit_test_external', 'lab_internal', 'lab_external');
+CREATE TYPE public.exam_type AS ENUM ('unit_test_internal_1', 'unit_test_internal_2', 'unit_test_external', 'lab_internal', 'lab_external');
 
 -- Supabase migration removed. Use MongoDB migration scripts for Atlas instead.
 CREATE TABLE public.profiles (
