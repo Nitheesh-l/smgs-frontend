@@ -53,7 +53,6 @@ const Auth = () => {
 
   // Redirect after successful login based on role
   useEffect(() => {
-    console.log("Redirect check:", { user: !!user, profile: !!profile, authLoading, hasRedirected, role: profile?.role });
     
     if (hasRedirected) {
       return;
