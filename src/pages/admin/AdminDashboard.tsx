@@ -9,7 +9,22 @@ import Loader from "@/components/ui/Loader";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { fetchJson } from "@/utils/api";
-import { Shield, Mail, Lock, User, ArrowLeft, LogOut } from "lucide-react";
+import { Shield, Mail, Lock, User, ArrowLeft, LogOut, Trash2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const addFacultySchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -21,6 +36,22 @@ interface FacultyForm {
   email: string;
   password: string;
   fullName: string;
+  assignedSubjects: string[];
+}
+
+interface Subject {
+  _id: string;
+  code: string;
+  name: string;
+  semester: number;
+  branch_code: string;
+}
+
+interface Faculty {
+  _id: string;
+  email: string;
+  full_name: string;
+  assigned_subjects: string[];
 }
 
 const AdminDashboard = () => {
@@ -30,11 +61,15 @@ const AdminDashboard = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [adminPassword, setAdminPassword] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [faculty, setFaculty] = useState<Faculty[]>([]);
+  const [factsLoading, setFactsLoading] = useState(false);
 
   const [facultyForm, setFacultyForm] = useState<FacultyForm>({
     email: "",
     password: "",
     fullName: "",
+    assignedSubjects: [],
   });
 
   // Check if user is admin - redirect immediately if not
@@ -46,6 +81,35 @@ const AdminDashboard = () => {
       }
     }
   }, [profile, authLoading, navigate]);
+
+  // Load subjects and faculty
+  useEffect(() => {
+    const loadData = async () => {
+      setFactsLoading(true);
+      try {
+        const [subjectsRes, facultyRes] = await Promise.all([
+          fetchJson("/api/subjects"),
+          fetchJson("/api/profiles/faculty/list"),
+        ]);
+
+        if (subjectsRes.res.ok) {
+          setSubjects(subjectsRes.data);
+        }
+
+        if (facultyRes.res.ok) {
+          setFaculty(facultyRes.data);
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setFactsLoading(false);
+      }
+    };
+
+    if (profile?.role === "admin") {
+      loadData();
+    }
+  }, [profile]);
 
   // Show loading while checking auth, or if not admin redirect in progress
   if (authLoading || !profile || profile.role !== "admin") {
@@ -64,6 +128,15 @@ const AdminDashboard = () => {
     const { name, value } = e.target;
     setFacultyForm((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handleSubjectToggle = (subjectId: string) => {
+    setFacultyForm((prev) => ({
+      ...prev,
+      assignedSubjects: prev.assignedSubjects.includes(subjectId)
+        ? prev.assignedSubjects.filter((id) => id !== subjectId)
+        : [...prev.assignedSubjects, subjectId],
+    }));
   };
 
   const handleAddFaculty = async (e: React.FormEvent) => {
@@ -98,6 +171,7 @@ const AdminDashboard = () => {
           full_name: facultyForm.fullName,
           admin_email: profile.email,
           admin_password: adminPassword,
+          assigned_subjects: facultyForm.assignedSubjects,
         }),
       });
 
@@ -108,9 +182,15 @@ const AdminDashboard = () => {
       }
 
       toast.success(`Faculty account created: ${facultyForm.email}`);
-      setFacultyForm({ email: "", password: "", fullName: "" });
+      setFacultyForm({ email: "", password: "", fullName: "", assignedSubjects: [] });
       setAdminPassword("");
       setShowForm(false);
+
+      // Reload faculty list
+      const { res: refRes, data: refData } = await fetchJson("/api/profiles/faculty/list");
+      if (refRes.ok) {
+        setFaculty(refData);
+      }
     } catch (error) {
       console.error("Add faculty error:", error);
       toast.error("Something went wrong. Please try again.");
@@ -119,10 +199,15 @@ const AdminDashboard = () => {
     }
   };
 
+  const getSubjectName = (subjectId: string) => {
+    const subject = subjects.find((s) => s._id === subjectId);
+    return subject ? `${subject.code} - ${subject.name}` : subjectId;
+  };
+
   return (
     <div className="min-h-screen mesh-gradient p-4">
       {/* Header */}
-      <div className="max-w-4xl mx-auto mb-8">
+      <div className="max-w-6xl mx-auto mb-8">
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => navigate("/")}
@@ -154,9 +239,9 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <GlassCard className="p-6">
             <p className="text-muted-foreground text-sm">Logged in as</p>
             <p className="text-xl font-bold text-gradient">{profile.full_name}</p>
@@ -169,14 +254,19 @@ const AdminDashboard = () => {
           </GlassCard>
 
           <GlassCard className="p-6">
-            <p className="text-muted-foreground text-sm">Available Actions</p>
-            <p className="text-xl font-bold text-gradient">Add Faculty</p>
+            <p className="text-muted-foreground text-sm">Total Faculty</p>
+            <p className="text-xl font-bold text-gradient">{faculty.length}</p>
+          </GlassCard>
+
+          <GlassCard className="p-6">
+            <p className="text-muted-foreground text-sm">Available Subjects</p>
+            <p className="text-xl font-bold text-gradient">{subjects.length}</p>
           </GlassCard>
         </div>
 
-        {/* Main Content */}
+        {/* Main Content - Add Faculty Form */}
         {!showForm ? (
-          <GlassCard className="p-8">
+          <GlassCard className="p-8 mb-8">
             <div className="text-center">
               <Shield className="w-16 h-16 mx-auto mb-4 text-gradient opacity-50" />
               <h2 className="text-2xl font-bold mb-2">Add Faculty User</h2>
@@ -193,7 +283,7 @@ const AdminDashboard = () => {
             </div>
           </GlassCard>
         ) : (
-          <GlassCard className="p-8">
+          <GlassCard className="p-8 mb-8">
             <div className="mb-8">
               <h2 className="text-2xl font-bold mb-2">Create Faculty Account</h2>
               <p className="text-muted-foreground">
@@ -247,6 +337,164 @@ const AdminDashboard = () => {
                       <p className="text-destructive text-xs mt-1">{errors.email}</p>
                     )}
                   </div>
+
+                  <div>
+                    <Label htmlFor="password" className="text-sm font-medium">
+                      Temporary Password
+                    </Label>
+                    <div className="relative mt-1">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        value={facultyForm.password}
+                        onChange={handleInputChange}
+                        placeholder="Enter a temporary password"
+                        className="pl-10 input-glow"
+                      />
+                    </div>
+                    {errors.password && (
+                      <p className="text-destructive text-xs mt-1">{errors.password}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Assigned Subjects Section */}
+              <div className="pt-6 border-t border-border">
+                <h3 className="text-lg font-semibold mb-4">Assign Subjects</h3>
+                {subjects.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {subjects.map((subject) => (
+                      <div
+                        key={subject._id}
+                        className="flex items-center p-3 rounded-lg border border-border hover:bg-accent/50 cursor-pointer transition"
+                        onClick={() => handleSubjectToggle(subject._id)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={facultyForm.assignedSubjects.includes(subject._id)}
+                          onChange={() => handleSubjectToggle(subject._id)}
+                          className="rounded border-border"
+                        />
+                        <label className="ml-3 flex-1 cursor-pointer">
+                          <p className="font-medium text-sm">{subject.code}</p>
+                          <p className="text-xs text-muted-foreground">{subject.name}</p>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">No subjects available</p>
+                )}
+              </div>
+
+              {/* Admin Verification Section */}
+              <div className="pt-6 border-t border-border">
+                <h3 className="text-lg font-semibold mb-4">Admin Verification</h3>
+                <div>
+                  <Label htmlFor="adminPassword" className="text-sm font-medium">
+                    Your Admin Password (to confirm)
+                  </Label>
+                  <div className="relative mt-1">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="adminPassword"
+                      type="password"
+                      value={adminPassword}
+                      onChange={(e) => {
+                        setAdminPassword(e.target.value);
+                        setErrors((prev) => ({ ...prev, adminPassword: "" }));
+                      }}
+                      placeholder="Enter your admin password"
+                      className="pl-10 input-glow"
+                    />
+                  </div>
+                  {errors.adminPassword && (
+                    <p className="text-destructive text-xs mt-1">{errors.adminPassword}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-gradient-primary hover:bg-gradient-primary/90"
+                >
+                  {loading ? "Creating..." : "Create Faculty Account"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowForm(false);
+                    setFacultyForm({ email: "", password: "", fullName: "", assignedSubjects: [] });
+                    setAdminPassword("");
+                    setErrors({});
+                  }}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </GlassCard>
+        )}
+
+        {/* Faculty List */}
+        <GlassCard className="p-8">
+          <h2 className="text-2xl font-bold mb-6">Faculty Members</h2>
+
+          {factsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader size="md" text="Loading faculty..." />
+            </div>
+          ) : faculty.length > 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Full Name</TableHead>
+                    <TableHead>Assigned Subjects</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {faculty.map((fac) => (
+                    <TableRow key={fac._id}>
+                      <TableCell className="font-mono text-sm">{fac.email}</TableCell>
+                      <TableCell>{fac.full_name}</TableCell>
+                      <TableCell>
+                        {fac.assigned_subjects && fac.assigned_subjects.length > 0 ? (
+                          <div className="space-y-1">
+                            {fac.assigned_subjects.map((subId) => (
+                              <p key={subId} className="text-xs bg-accent/50 px-2 py-1 rounded w-fit">
+                                {getSubjectName(subId)}
+                              </p>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">No subjects assigned</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">No faculty members yet</p>
+          )}
+        </GlassCard>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;
 
                   <div>
                     <Label htmlFor="password" className="text-sm font-medium">
