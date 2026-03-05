@@ -358,6 +358,7 @@ const FacultyMarks = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {students
+                        .filter((s) => s.year_of_study === Math.ceil(Number(selectedSemester) / 2))
                         .sort((a, b) => a.roll_number.localeCompare(b.roll_number))
                         .map((student) => (
                           <SelectItem key={student._id} value={student._id}>

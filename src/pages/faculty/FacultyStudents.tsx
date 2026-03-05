@@ -59,6 +59,17 @@ const studentSchema = z.object({
   branch_code: z.string().min(1, "Branch code is required"),
 });
 
+// Schema for editing students - full_name is optional
+const editStudentSchema = z.object({
+  roll_number: z.string().min(1, "Roll number is required"),
+  full_name: z.string().optional(),
+  password: z.union([z.string().min(6, "Password must be at least 6 characters"), z.literal('')]),
+  year_of_study: z.number().min(1).max(3),
+  gender: z.enum(["male", "female", "other"]),
+  phone_number: z.string().optional(),
+  branch_code: z.string().min(1, "Branch code is required"),
+});
+
 const FacultyStudents = () => {
   const { profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -130,11 +141,17 @@ const FacultyStudents = () => {
         return;
       }
 
-      const result = studentSchema.safeParse({
-        ...formData,
-        password: passwordToValidate,
-        year_of_study: Number(formData.year_of_study),
-      });
+      const result = editingStudent 
+        ? editStudentSchema.safeParse({
+            ...formData,
+            password: passwordToValidate,
+            year_of_study: Number(formData.year_of_study),
+          })
+        : studentSchema.safeParse({
+            ...formData,
+            password: passwordToValidate,
+            year_of_study: Number(formData.year_of_study),
+          });
 
       if (!result.success) {
         toast.error(result.error.errors[0].message);
@@ -308,7 +325,7 @@ const FacultyStudents = () => {
                     }
                     placeholder="e.g., John Doe"
                     className="mt-1"
-                    required
+                    
                   />
                 </div>
 

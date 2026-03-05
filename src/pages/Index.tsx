@@ -18,9 +18,11 @@ const Index = () => {
 
         <div className="relative max-w-7xl mx-auto px-4 pt-20 pb-32">
           {/* Logo and Title */}
-          <div className="text-center fade-in-up">
+          <div className="text-center items-center justify-center  fade-in-up">
                           
-            
+            <div className="w-screen h-30 flex justify-center pr-12">
+              <img src="/logo.png" alt="College Logo" className="w-40 h-30" />
+            </div>
             <h1 className="text-5xl md:text-7xl font-bold mb-6">
               <span className="text-gradient">Student </span> Attendance & Academic
               <br />

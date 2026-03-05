@@ -66,9 +66,7 @@ const GlassNav = ({ role, userName }: GlassNavProps) => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to={role === "faculty" ? "/faculty" : "/student"} className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
-              <GraduationCap className="w-6 h-6 text-primary-foreground" />
-            </div>
+             <img src="/logo.png" alt="College Logo" className="w-12" />
             <span className="font-bold text-lg hidden sm:block">
               {role === "faculty" ? "Faculty Portal" : "Student Portal"}
             </span>
