@@ -323,7 +323,7 @@ const FacultyStudents = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, full_name: e.target.value })
                     }
-                    placeholder="e.g., John Doe"
+                    placeholder="e.g., Abhishek"
                     className="mt-1"
                     
                   />
@@ -380,7 +380,6 @@ const FacultyStudents = () => {
                         <SelectValue placeholder="Select branch" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="CSE">CSE</SelectItem>
                         <SelectItem value="DCME">DCME</SelectItem>
                       </SelectContent>
                     </Select>
