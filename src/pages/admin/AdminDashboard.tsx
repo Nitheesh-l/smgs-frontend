@@ -68,6 +68,7 @@ const AdminDashboard = () => {
   const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(1);
+  const [selectedSemester, setSelectedSemester] = useState<number>(1);
 
   const [facultyForm, setFacultyForm] = useState<FacultyForm>({
     email: "",
@@ -97,11 +98,9 @@ const AdminDashboard = () => {
 
       if (subjectsRes.res.ok) {
         setAllSubjects(subjectsRes.data);
-        // Filter subjects by selected year on client side
-        const startSemester = (selectedYear - 1) * 2 + 1;
-        const endSemester = selectedYear * 2;
+        // Filter subjects by selected semester
         const filteredSubjects = subjectsRes.data.filter((subject: Subject) => 
-          subject.semester >= startSemester && subject.semester <= endSemester
+          subject.semester === selectedSemester
         );
         setSubjects(filteredSubjects);
       }
@@ -120,7 +119,7 @@ const AdminDashboard = () => {
     if (profile?.role === "admin") {
       loadData();
     }
-  }, [profile, selectedYear]);
+  }, [profile, selectedSemester]);
 
   // Show loading while checking auth, or if not admin redirect in progress
   if (authLoading || !profile || profile.role !== "admin") {
@@ -433,29 +432,48 @@ const AdminDashboard = () => {
               <div className="pt-6 border-t border-border">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Assign Subjects</h3>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm font-medium">Filter by Year:</Label>
-                    <select
-                      value={selectedYear}
-                      onChange={(e) => {
-                        const newYear = Number(e.target.value);
-                        setSelectedYear(newYear);
-                      }}
-                      className="px-3 py-1 border border-border rounded-md text-sm bg-background"
-                    >
-                      <option value={1}>Year 1</option>
-                      <option value={2}>Year 2</option>
-                      <option value={3}>Year 3</option>
-                    </select>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm font-medium">Year:</Label>
+                      <select
+                        value={selectedYear}
+                        onChange={(e) => {
+                          const newYear = Number(e.target.value);
+                          setSelectedYear(newYear);
+                          // Auto-select first semester of the year
+                          setSelectedSemester((newYear - 1) * 2 + 1);
+                        }}
+                        className="px-3 py-1 border border-border rounded-md text-sm bg-background"
+                      >
+                        <option value={1}>Year 1</option>
+                        <option value={2}>Year 2</option>
+                        <option value={3}>Year 3</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm font-medium">Semester:</Label>
+                      <select
+                        value={selectedSemester}
+                        onChange={(e) => setSelectedSemester(Number(e.target.value))}
+                        className="px-3 py-1 border border-border rounded-md text-sm bg-background"
+                      >
+                        <option value={1}>Semester 1</option>
+                        <option value={2}>Semester 2</option>
+                        <option value={3}>Semester 3</option>
+                        <option value={4}>Semester 4</option>
+                        <option value={5}>Semester 5</option>
+                        <option value={6}>Semester 6</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
                 {subjects.length > 0 || facultyForm.assignedSubjects.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {/* Show assigned subjects from other years first */}
+                    {/* Show assigned subjects from other semesters first */}
                     {allSubjects
                       .filter(subject => 
                         facultyForm.assignedSubjects.includes(subject._id) && 
-                        !subjects.find(s => s._id === subject._id)
+                        subject.semester !== selectedSemester
                       )
                       .map((subject) => (
                         <div
@@ -471,7 +489,7 @@ const AdminDashboard = () => {
                           />
                           <label className="ml-3 flex-1 cursor-pointer">
                             <p className="font-medium text-sm">{subject.code}</p>
-                            <p className="text-xs text-orange-600">{subject.name} (Sem {subject.semester}) - Different Year</p>
+                            <p className="text-xs text-orange-600">{subject.name} (Sem {subject.semester}) - Different Semester</p>
                           </label>
                         </div>
                       ))}
@@ -496,7 +514,7 @@ const AdminDashboard = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm">No subjects available for Year {selectedYear}</p>
+                  <p className="text-muted-foreground text-sm">No subjects available for Semester {selectedSemester}</p>
                 )}
               </div>
 
