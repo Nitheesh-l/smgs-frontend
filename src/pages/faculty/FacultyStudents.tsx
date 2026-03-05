@@ -468,7 +468,6 @@ const FacultyStudents = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Roll Number</TableHead>
-                    <TableHead>Name</TableHead>
                     <TableHead>Year</TableHead>
                     <TableHead>Gender</TableHead>
                     <TableHead>Branch</TableHead>
@@ -482,7 +481,6 @@ const FacultyStudents = () => {
                       <TableCell className="font-medium">
                         {student.roll_number}
                       </TableCell>
-                      <TableCell>{student.full_name}</TableCell>
                       <TableCell>{student.year_of_study}</TableCell>
                       <TableCell>{student.gender}</TableCell>
                       <TableCell>{student.branch_code}</TableCell>
