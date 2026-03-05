@@ -62,10 +62,12 @@ const AdminDashboard = () => {
   const [adminPassword, setAdminPassword] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
   const [faculty, setFaculty] = useState<Faculty[]>([]);
   const [factsLoading, setFactsLoading] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number>(1);
 
   const [facultyForm, setFacultyForm] = useState<FacultyForm>({
     email: "",
@@ -85,33 +87,40 @@ const AdminDashboard = () => {
   }, [profile, authLoading, navigate]);
 
   // Load subjects and faculty
-  useEffect(() => {
-    const loadData = async () => {
-      setFactsLoading(true);
-      try {
-        const [subjectsRes, facultyRes] = await Promise.all([
-          fetchJson("/api/subjects"),
-          fetchJson("/api/profiles/faculty/list"),
-        ]);
+  const loadData = async () => {
+    setFactsLoading(true);
+    try {
+      const [subjectsRes, facultyRes] = await Promise.all([
+        fetchJson("/api/subjects"),
+        fetchJson("/api/profiles/faculty/list"),
+      ]);
 
-        if (subjectsRes.res.ok) {
-          setSubjects(subjectsRes.data);
-        }
-
-        if (facultyRes.res.ok) {
-          setFaculty(facultyRes.data);
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
-      } finally {
-        setFactsLoading(false);
+      if (subjectsRes.res.ok) {
+        setAllSubjects(subjectsRes.data);
+        // Filter subjects by selected year on client side
+        const startSemester = (selectedYear - 1) * 2 + 1;
+        const endSemester = selectedYear * 2;
+        const filteredSubjects = subjectsRes.data.filter((subject: Subject) => 
+          subject.semester >= startSemester && subject.semester <= endSemester
+        );
+        setSubjects(filteredSubjects);
       }
-    };
 
+      if (facultyRes.res.ok) {
+        setFaculty(facultyRes.data);
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+    } finally {
+      setFactsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (profile?.role === "admin") {
       loadData();
     }
-  }, [profile]);
+  }, [profile, selectedYear]);
 
   // Show loading while checking auth, or if not admin redirect in progress
   if (authLoading || !profile || profile.role !== "admin") {
@@ -237,7 +246,7 @@ const AdminDashboard = () => {
   };
 
   const getSubjectName = (subjectId: string) => {
-    const subject = subjects.find((s) => s._id === subjectId);
+    const subject = allSubjects.find((s) => s._id === subjectId);
     return subject ? `${subject.code} - ${subject.name}` : subjectId;
   };
 
@@ -422,9 +431,51 @@ const AdminDashboard = () => {
 
               {/* Assigned Subjects Section */}
               <div className="pt-6 border-t border-border">
-                <h3 className="text-lg font-semibold mb-4">Assign Subjects</h3>
-                {subjects.length > 0 ? (
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Assign Subjects</h3>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm font-medium">Filter by Year:</Label>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => {
+                        const newYear = Number(e.target.value);
+                        setSelectedYear(newYear);
+                      }}
+                      className="px-3 py-1 border border-border rounded-md text-sm bg-background"
+                    >
+                      <option value={1}>Year 1</option>
+                      <option value={2}>Year 2</option>
+                      <option value={3}>Year 3</option>
+                    </select>
+                  </div>
+                </div>
+                {subjects.length > 0 || facultyForm.assignedSubjects.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Show assigned subjects from other years first */}
+                    {allSubjects
+                      .filter(subject => 
+                        facultyForm.assignedSubjects.includes(subject._id) && 
+                        !subjects.find(s => s._id === subject._id)
+                      )
+                      .map((subject) => (
+                        <div
+                          key={subject._id}
+                          className="flex items-center p-3 rounded-lg border border-orange-200 bg-orange-50 cursor-pointer transition"
+                          onClick={() => handleSubjectToggle(subject._id)}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={facultyForm.assignedSubjects.includes(subject._id)}
+                            onChange={() => handleSubjectToggle(subject._id)}
+                            className="rounded border-border"
+                          />
+                          <label className="ml-3 flex-1 cursor-pointer">
+                            <p className="font-medium text-sm">{subject.code}</p>
+                            <p className="text-xs text-orange-600">{subject.name} (Sem {subject.semester}) - Different Year</p>
+                          </label>
+                        </div>
+                      ))}
+                    {/* Show subjects for current year */}
                     {subjects.map((subject) => (
                       <div
                         key={subject._id}
@@ -439,13 +490,13 @@ const AdminDashboard = () => {
                         />
                         <label className="ml-3 flex-1 cursor-pointer">
                           <p className="font-medium text-sm">{subject.code}</p>
-                          <p className="text-xs text-muted-foreground">{subject.name}</p>
+                          <p className="text-xs text-muted-foreground">{subject.name} (Sem {subject.semester})</p>
                         </label>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm">No subjects available</p>
+                  <p className="text-muted-foreground text-sm">No subjects available for Year {selectedYear}</p>
                 )}
               </div>
 
