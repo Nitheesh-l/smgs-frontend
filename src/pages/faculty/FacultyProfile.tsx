@@ -52,7 +52,7 @@ const FacultyProfile = () => {
       try {
         // Fetch faculty profile with assigned subjects
         const { res: profileRes, data: profileData } = await fetchJson(
-          `/api/profiles?user_id=${profile.id}`
+          `/api/profiles?_id=${profile.id}`
         );
 
         if (!profileRes.ok) {
@@ -61,6 +61,13 @@ const FacultyProfile = () => {
         }
 
         const facultyProfile = Array.isArray(profileData) ? profileData[0] : profileData;
+        
+        if (!facultyProfile) {
+          toast.error("Faculty profile not found");
+          setLoading(false);
+          return;
+        }
+
         setFacultyData(facultyProfile);
 
         // Fetch all subjects to show assigned ones
