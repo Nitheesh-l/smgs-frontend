@@ -149,6 +149,13 @@ const FacultyDashboard = () => {
                   <p className="text-sm text-muted-foreground">Exam marks entry</p>
                 </div>
               </Link>
+              <Link to="/faculty/subjects">
+                <div className="p-4 rounded-xl bg-warning/5 border border-warning/20 hover:bg-warning/10 transition-colors cursor-pointer group">
+                  <BookOpen className="w-8 h-8 text-warning mb-2 group-hover:scale-110 transition-transform" />
+                  <p className="font-medium">Subjects</p>
+                  <p className="text-sm text-muted-foreground">View or add subjects</p>
+                </div>
+              </Link>
               <Link to="/faculty/students">
                 <div className="p-4 rounded-xl bg-warning/5 border border-warning/20 hover:bg-warning/10 transition-colors cursor-pointer group">
                   <Users className="w-8 h-8 text-warning mb-2 group-hover:scale-110 transition-transform" />

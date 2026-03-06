@@ -100,11 +100,12 @@ const FacultyMarks = () => {
   });
   const [selectedSemester, setSelectedSemester] = useState("1");
   const [selectedYear, setSelectedYear] = useState("1");
-  const [selectedBranch, setSelectedBranch] = useState<string>("CS");
+  const [selectedBranch, setSelectedBranch] = useState<string>("DCME");
   const [selectedSubjectType, setSelectedSubjectType] = useState<"all" | "theory" | "lab">("all");
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
   const [assignedSubjects, setAssignedSubjects] = useState<string[]>([]);
+  const [formSubjects, setFormSubjects] = useState<Subject[]>([]);
 
   // Always show individual marks - no combining
   // This ensures Edit/Delete actions are always available
@@ -118,6 +119,7 @@ const FacultyMarks = () => {
     total_marks: "100",
     exam_type: "unit_test_internal_1",
     academicYear: "2025-26",
+    semester: selectedSemester,
   });
 
   useEffect(() => {
@@ -199,6 +201,37 @@ const FacultyMarks = () => {
     }
   }, [profile, selectedSemester, selectedSubjectType, selectedStudent, selectedYear, selectedBranch]);
 
+  // Update year when semester changes
+  useEffect(() => {
+    const newYear = Math.ceil(Number(selectedSemester) / 2);
+    setSelectedYear(String(newYear));
+  }, [selectedSemester]);
+
+  // Fetch subjects for form semester
+  useEffect(() => {
+    const fetchFormSubjects = async () => {
+      if (!formData.semester) return;
+      try {
+        const params = new URLSearchParams();
+        params.set('semester', formData.semester);
+        const { res, data } = await fetchJson(`/api/subjects?${params.toString()}`);
+        if (res.ok) {
+          const all = Array.isArray(data) ? data : [];
+          let filtered = all.filter((s: Subject) => s.semester === Number(formData.semester));
+          if (assignedSubjects.length > 0) {
+            filtered = filtered.filter((s: Subject) => assignedSubjects.includes(s._id));
+          }
+          setFormSubjects(filtered);
+        }
+      } catch (err) {
+        console.error("Error fetching form subjects:", err);
+      }
+    };
+    if (formData.semester) {
+      fetchFormSubjects();
+    }
+  }, [formData.semester, assignedSubjects]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
@@ -233,7 +266,7 @@ const FacultyMarks = () => {
       }
 
       // use selected exam_type from form if provided, otherwise determine default from subject
-      const subj = subjects.find((s) => s._id === formData.subject_id);
+      const subj = formSubjects.find((s) => s._id === formData.subject_id);
       const examType: ExamType = (formData as any).exam_type
         ? (formData as any).exam_type
         : subj?.type === "lab"
@@ -249,7 +282,7 @@ const FacultyMarks = () => {
         body: JSON.stringify({
           student_id: selectedStudent,
           subject_id: formData.subject_id,
-          semester: Number(selectedSemester),
+          semester: Number(formData.semester),
           exam_type: examType,
           marks_obtained: marksObtained,
           total_marks: totalMarks,
@@ -274,6 +307,7 @@ const FacultyMarks = () => {
         total_marks: "100",
         exam_type: "unit_test_internal_1",
         academicYear: "2025-26",
+        semester: selectedSemester,
       });
       fetchData();
     } catch (error) {
@@ -314,6 +348,7 @@ const FacultyMarks = () => {
       total_marks: String(mark.total_marks),
       exam_type: mark.exam_type,
       academicYear: mark.academic_year,
+      semester: String(mark.semester),
     });
     setIsDialogOpen(true);
   };
@@ -359,6 +394,25 @@ const FacultyMarks = () => {
                 </div>
 
                 <div>
+                  <Label>Semester</Label>
+                  <Select
+                    value={formData.semester}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, semester: value })
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1,2,3,4,5,6].map((s) => (
+                        <SelectItem key={s} value={String(s)}>Semester {s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
                   <Label>Subject</Label>
                   <Select
                     value={formData.subject_id}
@@ -370,14 +424,14 @@ const FacultyMarks = () => {
                       <SelectValue placeholder="Select subject" />
                     </SelectTrigger>
                     <SelectContent>
-                      {subjects.map((subject) => (
+                      {formSubjects.map((subject) => (
                         <SelectItem key={subject._id} value={subject._id}>
                           {subject.name} ({subject.code})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {subjects.length === 0 && (
+                  {formSubjects.length === 0 && (
                     <p className="text-xs text-muted-foreground mt-1">
                       No subjects assigned for this semester. Contact admin to assign subjects.
                     </p>
@@ -482,6 +536,7 @@ const FacultyMarks = () => {
                         subjectForm.type === "lab"
                           ? { sessional: Number(subjectForm.sessional), external: Number(subjectForm.external) }
                           : { ut: Number(subjectForm.ut), external: Number(subjectForm.external) },
+                      created_by: profile?.id,
                     };
 
                     const { res, data } = await fetchJson("/api/subjects", {
@@ -496,6 +551,13 @@ const FacultyMarks = () => {
                     }
 
                     toast.success("Subject created");
+                    // automatically add new subject to faculty's assigned list so it appears in marks dropdown
+                    if (data?._id) {
+                      setAssignedSubjects((prev) => {
+                        if (prev.includes(data._id)) return prev;
+                        return [...prev, data._id];
+                      });
+                    }
                     setIsSubjectDialogOpen(false);
                     // reset
                     setSubjectForm({ code: "", name: "", semester: Number(selectedSemester), branch_code: subjectForm.branch_code || "CS", type: "theory", ut: 20, external: 80, sessional: 40 });
@@ -602,8 +664,17 @@ const FacultyMarks = () => {
                 onChange={(e) => setSelectedBranch(e.target.value)}
                 className="px-2 py-1 border border-border rounded-md bg-background text-sm"
               >
-                <option value=""></option>
                 <option value="DCME">DCME</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Semester:</span>
+              <select
+                value={selectedSemester}
+                onChange={(e) => setSelectedSemester(e.target.value)}
+                className="px-2 py-1 border border-border rounded-md bg-background text-sm"
+              >
+                {[1,2,3,4,5,6].map((s) => <option key={s} value={s}>Semester {s}</option>)}
               </select>
             </div>
           </div>
@@ -627,7 +698,7 @@ const FacultyMarks = () => {
                     size="sm"
                     onClick={() => {
                       setSelectedStudent(stu._id);
-                      setFormData((f) => ({ ...f, student_id: stu._id }));
+                      setFormData((f) => ({ ...f, student_id: stu._id, semester: selectedSemester }));
                       setIsDialogOpen(true);
                     }}
                   >
