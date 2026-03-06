@@ -81,8 +81,7 @@ const FacultyStudents = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(1);
   const [showPassword, setShowPassword] = useState(false);
-  // reset password UI removed per request
-  // reset password state removed
+
   const [formData, setFormData] = useState({
     roll_number: "",
     full_name: "",
@@ -228,7 +227,7 @@ const FacultyStudents = () => {
     setFormData({
       roll_number: student.roll_number,
       full_name: student.full_name ,
-      password: ".......", // Leave password empty - let user type new one if they want to change
+      password: ".......",
       year_of_study: student.year_of_study,
       gender: student.gender,
       phone_number: student.phone_number || "",
@@ -274,9 +273,7 @@ const FacultyStudents = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Student Details</h1>
-            {/* <p className="text-muted-foreground">
-              Manage student registrations and details
-            </p> */}
+            
           </div>
           <Dialog
             open={isDialogOpen}

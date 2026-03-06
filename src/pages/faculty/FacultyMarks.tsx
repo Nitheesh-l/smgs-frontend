@@ -35,8 +35,6 @@ import { fetchJson } from "@/utils/api";
 import { toast } from "sonner";
 import { Plus, BookOpen, Filter, Trash2, Edit } from "lucide-react";
 
-// exam types are no longer exposed in faculty UI; keep type for backend compatibility if needed
-// but most UI logic handles combined marks by subject/subject type.
 
 type ExamType = "unit_test_internal_1" | "unit_test_internal_2" | "unit_test_external" | "lab_internal" | "lab_external";
 
@@ -336,9 +334,7 @@ const FacultyMarks = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Marks Management</h1>
-            {/* <p className="text-muted-foreground">
-              Enter and manage student exam marks
-            </p> */}
+            
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -435,20 +431,6 @@ const FacultyMarks = () => {
                     />
                   </div>
                 </div>
-
-                {/* <div>
-                  <Label>Academic Year</Label>
-                  <Input
-                    type="text"
-                    value={formData.academicYear}
-                    onChange={(e) =>
-                      setFormData({ ...formData, academicYear: e.target.value })
-                    }
-                    placeholder="e.g., 2025-26"
-                    className="mt-1"
-                    pattern="\d{4}-\d{2}"
-                  />
-                </div> */}
 
                 <div className="flex gap-3 pt-4">
                   <Button

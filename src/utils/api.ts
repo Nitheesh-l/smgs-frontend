@@ -1,5 +1,4 @@
-// Use environment variable for API base URL (for deployed environments)
-// Falls back to relative paths (Vite proxy in dev, same-origin in prod)
+
 const API_BASE = import.meta.env.VITE_API_BASE || '';
 
 export async function parseJsonSafe(res: Response) {

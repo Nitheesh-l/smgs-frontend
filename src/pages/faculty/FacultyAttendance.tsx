@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { Calendar as CalendarIcon, Check, X, Save, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Student {
-  _id: string;  // ✅ Correct
+  _id: string; 
   roll_number: string;
   year_of_study: number;
   branch_code: string;
@@ -251,9 +251,7 @@ const FacultyAttendance = () => {
         {/* Header */}
         <div className="mb-8 mt-4">
           <h1 className="text-3xl font-bold mb-2">Periods-based Attendance </h1>
-          {/* <p className="text-muted-foreground">
-            Mark attendance by periods per day (0-{TOTAL_PERIODS} periods)
-          </p> */}
+          
         </div>
 
         {/* Controls */}

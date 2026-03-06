@@ -76,9 +76,7 @@ const FacultyDashboard = () => {
           <h1 className="text-3xl font-bold mb-2">
             Welcome back, <span className="text-gradient">{profile?.full_name}</span>
           </h1>
-          {/* <p className="text-muted-foreground">
-            Here's an overview of your student management system
-          </p> */}
+          
         </div>
 
         {/* Year Selector */}
@@ -160,63 +158,6 @@ const FacultyDashboard = () => {
               </Link>
             </div>
           </GlassCard>
-
-          {/* Recent Students */}
-          {/* <GlassCard className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Recent Students</h2>
-              <Link to="/faculty/students">
-                <Button variant="ghost" size="sm">
-                  View All
-                </Button>
-              </Link>
-            </div>
-            {recentStudents.length > 0 ? (
-              <div className="space-y-3">
-                {recentStudents.map((student) => (
-                  <div
-                    key={student._id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary font-semibold">
-                          {student.roll_number?.charAt(0) || "S"}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{student.full_name ? student.full_name : `Roll No: ${student.roll_number}`}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {student.full_name ? `Roll No: ${student.roll_number} • ` : ''}Year {student.year_of_study} • {student.branch_code}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        student.gender === "male"
-                          ? "bg-blue-100 text-blue-700"
-                          : student.gender === "female"
-                          ? "bg-pink-100 text-pink-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {student.gender}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No students registered yet</p>
-                <Link to="/faculty/students">
-                  <Button variant="link" className="mt-2">
-                    Add your first student
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </GlassCard> */}
         </div>
       </PageWrapper>
     </>
