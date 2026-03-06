@@ -83,6 +83,7 @@ const FacultyMarks = () => {
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
   const [marks, setMarks] = useState<Mark[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -101,8 +102,9 @@ const FacultyMarks = () => {
   });
   const [selectedSemester, setSelectedSemester] = useState("1");
   const [selectedYear, setSelectedYear] = useState("1");
+  const [selectedBranch, setSelectedBranch] = useState<string>("CS");
   const [selectedSubjectType, setSelectedSubjectType] = useState<"all" | "theory" | "lab">("all");
-  const [selectedStudent, setSelectedStudent] = useState<string>("all");
+  const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
   const [assignedSubjects, setAssignedSubjects] = useState<string[]>([]);
 
@@ -130,8 +132,11 @@ const FacultyMarks = () => {
     try {
       setLoading(true);
 
-      // Fetch students
-      const { res: studRes, data: studData } = await fetchJson("/api/students");
+      // Fetch filtered students based on year/branch
+      const studParams = new URLSearchParams();
+      studParams.set('year_of_study', selectedYear);
+      studParams.set('branch_code', selectedBranch);
+      const { res: studRes, data: studData } = await fetchJson(`/api/students?${studParams.toString()}`);
       if (studRes.ok) {
         setStudents(Array.isArray(studData) ? studData : []);
       }
@@ -149,38 +154,38 @@ const FacultyMarks = () => {
       // Fetch subjects for selected semester
       const { res: subjRes, data: subjData } = await fetchJson("/api/subjects");
       if (subjRes.ok) {
-        let allSubjects = Array.isArray(subjData) ? subjData : [];
-        // Filter by semester
-        allSubjects = allSubjects.filter((s: Subject) => s.semester === Number(selectedSemester));
-        // Filter by faculty's assigned subjects if any are assigned
+        const all = Array.isArray(subjData) ? subjData : [];
+        setAllSubjects(all);
+        let filtered = all.filter((s: Subject) => s.semester === Number(selectedSemester));
         if (activeAssignedSubjects.length > 0) {
-          allSubjects = allSubjects.filter((s: Subject) => activeAssignedSubjects.includes(s._id));
+          filtered = filtered.filter((s: Subject) => activeAssignedSubjects.includes(s._id));
         }
-        setSubjects(allSubjects);
+        setSubjects(filtered);
       }
 
-      // Fetch marks
-      const params = new URLSearchParams();
-      params.set('semester', selectedSemester);
-      if (selectedStudent && selectedStudent !== "all") {
+      // Fetch marks only for selected student
+      if (selectedStudent) {
+        const params = new URLSearchParams();
+        params.set('semester', selectedSemester);
         params.set('student_id', selectedStudent);
-      }
 
-      const { res: marksRes, data: marksData } = await fetchJson(`/api/marks?${params.toString()}`);
-      if (marksRes.ok) {
-        let marksList: Mark[] = Array.isArray(marksData) ? marksData : [];
-        // filter by subject type if not 'all'
-        if (selectedSubjectType !== "all" && subjects.length > 0) {
-          const allowed = subjects
-            .filter((s) => s.type === selectedSubjectType)
-            .map((s) => s._id);
-          marksList = marksList.filter((m) => allowed.includes(m.subject_id));
+        const { res: marksRes, data: marksData } = await fetchJson(`/api/marks?${params.toString()}`);
+        if (marksRes.ok) {
+          let marksList: Mark[] = Array.isArray(marksData) ? marksData : [];
+          // filter by subject type if not 'all'
+          if (selectedSubjectType !== "all" && subjects.length > 0) {
+            const allowed = subjects
+              .filter((s) => s.type === selectedSubjectType)
+              .map((s) => s._id);
+            marksList = marksList.filter((m) => allowed.includes(m.subject_id));
+          }
+          if (activeAssignedSubjects.length > 0) {
+            marksList = marksList.filter((m) => activeAssignedSubjects.includes(m.subject_id));
+          }
+          setMarks(marksList);
         }
-        // filter by faculty's assigned subjects
-        if (activeAssignedSubjects.length > 0) {
-          marksList = marksList.filter((m) => activeAssignedSubjects.includes(m.subject_id));
-        }
-        setMarks(marksList);
+      } else {
+        setMarks([]);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -194,7 +199,7 @@ const FacultyMarks = () => {
     if (profile?.role === "faculty") {
       fetchData();
     }
-  }, [profile, selectedSemester, selectedSubjectType, selectedStudent]);
+  }, [profile, selectedSemester, selectedSubjectType, selectedStudent, selectedYear, selectedBranch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,6 +207,11 @@ const FacultyMarks = () => {
     setSubmitting(true);
 
     try {
+      if (!selectedStudent) {
+        toast.error("No student selected");
+        setSubmitting(false);
+        return;
+      }
       const marksObtained = Number(formData.marks_obtained);
       const totalMarks = Number(formData.total_marks);
 
@@ -239,7 +249,7 @@ const FacultyMarks = () => {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          student_id: formData.student_id,
+          student_id: selectedStudent,
           subject_id: formData.subject_id,
           semester: Number(selectedSemester),
           exam_type: examType,
@@ -346,27 +356,10 @@ const FacultyMarks = () => {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div>
-                  <Label>Student (Semester {selectedSemester})</Label>
-                  <Select
-                    value={formData.student_id}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, student_id: value })
-                    }
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select student" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {students
-                        .filter((s) => s.year_of_study === Math.ceil(Number(selectedSemester) / 2))
-                        .sort((a, b) => a.roll_number.localeCompare(b.roll_number))
-                        .map((student) => (
-                          <SelectItem key={student._id} value={student._id}>
-                            {student.roll_number} - Year {student.year_of_study}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Student</Label>
+                  <p className="mt-1">
+                    {students.find((s) => s._id === selectedStudent)?.roll_number || "(none)"}
+                  </p>
                 </div>
 
                 <div>
@@ -605,84 +598,67 @@ const FacultyMarks = () => {
           </Dialog>
         </div>
 
-        {/* Filters */}
+        {/* Year/branch filters and student listing */}
         <GlassCard className="p-6 mb-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Filters:</span>
-            </div>
+          <div className="flex flex-wrap gap-6 items-center mb-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Year:</span>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1, 2, 3].map((year) => (
-                    <SelectItem key={year} value={String(year)}>
-                      Year {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Semester:</span>
-              <Select value={selectedSemester} onValueChange={setSelectedSemester}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(() => {
-                    const semesterStart = (Number(selectedYear) - 1) * 2 + 1;
-                    const semesterEnd = Number(selectedYear) * 2;
-                    return [semesterStart, semesterEnd].map((sem) => (
-                      <SelectItem key={sem} value={String(sem)}>
-                        Semester {sem}
-                      </SelectItem>
-                    ));
-                  })()}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Student:</span>
-              <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                <SelectTrigger className="w-56">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Students</SelectItem>
-                  {students
-                    .filter((s) => s.year_of_study === Number(selectedYear))
-                    .sort((a, b) => a.roll_number.localeCompare(b.roll_number))
-                    .map((student) => (
-                      <SelectItem key={student._id} value={student._id}>
-                        {student.roll_number}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Subject Type:</span>
-              <Select
-                value={selectedSubjectType}
-                onValueChange={(v) => setSelectedSubjectType(v as "all"|"theory"|"lab")}
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="px-2 py-1 border border-border rounded-md bg-background text-sm"
               >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Hide 'All' option when viewing all students to force specific type selection */}
-                  {selectedStudent !== "all" && <SelectItem value="all">All</SelectItem>}
-                  <SelectItem value="theory">Theory</SelectItem>
-                  <SelectItem value="lab">Lab</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="1">Year 1</option>
+                <option value="2">Year 2</option>
+                <option value="3">Year 3</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Branch:</span>
+              <select
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+                className="px-2 py-1 border border-border rounded-md bg-background text-sm"
+              >
+                <option value=""></option>
+                <option value="DCME">DCME</option>
+              </select>
             </div>
           </div>
+
+          {students.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {students.map((stu) => (
+                <div
+                  key={stu._id}
+                  className={`flex items-center justify-between p-3 rounded-lg border transition 
+                    ${selectedStudent === stu._id ? 'border-primary bg-primary/10' : 'border-border'}
+                  `}
+                >
+                  <div>
+                    <p className="font-medium">{stu.roll_number}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Year {stu.year_of_study} • {stu.branch_code}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setSelectedStudent(stu._id);
+                      setFormData((f) => ({ ...f, student_id: stu._id }));
+                      setIsDialogOpen(true);
+                    }}
+                  >
+                    Add Marks
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              No students found for selected year/branch
+            </p>
+          )}
         </GlassCard>
 
         {/* Marks Table */}
@@ -768,6 +744,14 @@ const FacultyMarks = () => {
                   })}
                 </TableBody>
               </Table>
+            </div>
+          ) : !selectedStudent ? (
+            <div className="text-center py-16">
+              <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+              <h3 className="text-lg font-medium mb-2">No student selected</h3>
+              <p className="text-muted-foreground mb-4">
+                Please choose a student from the list above to view or add marks.
+              </p>
             </div>
           ) : (
             <div className="text-center py-16">

@@ -23,9 +23,21 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { BookOpen, Filter, Award } from "lucide-react";
 
-// exam types are no longer shown to students; marks are combined by subject
-
+// exam types are now filterable. students can view all marks combined or
+// restrict the view to internal/external/lab internal/lab external entries.
 type ExamType = "unit_test_internal_1" | "unit_test_internal_2" | "unit_test_external" | "lab_internal" | "lab_external";
+
+// filter options shown in dropdown
+type ExamFilter = "all" | "internal" | "external" | "lab_internal" | "lab_external";
+
+// human-readable labels for exam types
+const examTypeLabels: Record<ExamType, string> = {
+  unit_test_internal_1: "UT1 Internal",
+  unit_test_internal_2: "UT2 Internal",
+  unit_test_external: "External",
+  lab_internal: "Lab Internal",
+  lab_external: "Lab External",
+};
 
 interface Mark {
   id: string;
@@ -46,6 +58,7 @@ const StudentMarks = () => {
   const [studentData, setStudentData] = useState<any>(null);
   const [marks, setMarks] = useState<Mark[]>([]);
   const [selectedSemester, setSelectedSemester] = useState("1");
+  const [selectedFilter, setSelectedFilter] = useState<ExamFilter>("all");
 
   useEffect(() => {
     if (!authLoading && (!profile || profile.role !== "student")) {
@@ -108,10 +121,33 @@ const StudentMarks = () => {
     }
   }, [studentId, selectedSemester]);
 
-  // combine internal/external marks by subject code
+  // filter raw marks according to chosen exam filter
+  const filteredMarks = useMemo(() => {
+    switch (selectedFilter) {
+      case "internal":
+        return marks.filter(
+          (m) => m.exam_type === "unit_test_internal_1" || m.exam_type === "unit_test_internal_2"
+        );
+      case "external":
+        return marks.filter((m) => m.exam_type === "unit_test_external");
+      case "lab_internal":
+        return marks.filter((m) => m.exam_type === "lab_internal");
+      case "lab_external":
+        return marks.filter((m) => m.exam_type === "lab_external");
+      default:
+        return marks;
+    }
+  }, [marks, selectedFilter]);
+
+  // combine internal/external marks by subject code only when viewing all
   const displayMarks = useMemo(() => {
+    if (selectedFilter !== "all") {
+      // show raw entries for filtered view
+      return filteredMarks;
+    }
+
     const map = new Map<string, Mark & { count: number }>();
-    marks.forEach((m) => {
+    filteredMarks.forEach((m) => {
       const key = m.subject_code;
       if (!map.has(key)) {
         map.set(key, { ...m, count: 1 });
@@ -136,11 +172,11 @@ const StudentMarks = () => {
       }
     });
     return arr;
-  }, [marks]);
+  }, [filteredMarks, selectedFilter]);
 
-  // Calculate totals
-  const totalMarksObtained = marks.reduce((sum, m) => sum + m.marks_obtained, 0);
-  const totalMaxMarks = marks.reduce((sum, m) => sum + m.total_marks, 0);
+  // Calculate totals based on filtered data
+  const totalMarksObtained = filteredMarks.reduce((sum, m) => sum + m.marks_obtained, 0);
+  const totalMaxMarks = filteredMarks.reduce((sum, m) => sum + m.total_marks, 0);
   const overallPercentage = totalMaxMarks > 0 ? Math.round((totalMarksObtained / totalMaxMarks) * 100) : 0;
 
   if (authLoading) {
@@ -211,9 +247,25 @@ const StudentMarks = () => {
               </Select>
             </div>
             {marks.length > 0 && (
-              <div className="flex items-center gap-3">
-                <Award className="w-5 h-5 text-primary" />
-                <span className="text-sm text-muted-foreground">Overall:</span>
+              <>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-muted-foreground">Filter:</span>
+                  <Select value={selectedFilter} onValueChange={(value) => setSelectedFilter(value as ExamFilter)}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="internal">Internal</SelectItem>
+                      <SelectItem value="external">External</SelectItem>
+                      <SelectItem value="lab_internal">Lab Internal</SelectItem>
+                      <SelectItem value="lab_external">Lab External</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Award className="w-5 h-5 text-primary" />
+                  <span className="text-sm text-muted-foreground">Overall:</span>
                 <span className={`text-xl font-bold ${
                   overallPercentage >= 75 ? "text-success" : 
                   overallPercentage >= 50 ? "text-warning" : "text-destructive"
@@ -221,7 +273,7 @@ const StudentMarks = () => {
                   {overallPercentage}%
                 </span>
               </div>
-            )}
+            </>)}
           </div>
         </GlassCard>
 
@@ -238,6 +290,7 @@ const StudentMarks = () => {
                     <TableRow>
                       <TableHead>Subject</TableHead>
                       <TableHead>Code</TableHead>
+                      {selectedFilter !== "all" && <TableHead className="text-center">Type</TableHead>}
                       <TableHead className="text-center">Marks Obtained</TableHead>
                       <TableHead className="text-center">Total Marks</TableHead>
                       <TableHead className="text-center">Percentage</TableHead>
@@ -258,6 +311,11 @@ const StudentMarks = () => {
                               {mark.subject_code}
                             </span>
                           </TableCell>
+                          {selectedFilter !== "all" && (
+                            <TableCell className="text-center text-xs">
+                              {examTypeLabels[mark.exam_type]}
+                            </TableCell>
+                          )}
                           <TableCell className="text-center font-semibold">
                             {mark.marks_obtained}
                           </TableCell>
