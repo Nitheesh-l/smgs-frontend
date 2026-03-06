@@ -125,7 +125,7 @@ const FacultyDashboard = () => {
         </div>
 
         {/* Quick Actions & Recent Students */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid gap-6">
           {/* Quick Actions */}
           <GlassCard className="p-6">
             <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
@@ -162,7 +162,7 @@ const FacultyDashboard = () => {
           </GlassCard>
 
           {/* Recent Students */}
-          <GlassCard className="p-6">
+          {/* <GlassCard className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Recent Students</h2>
               <Link to="/faculty/students">
@@ -216,7 +216,7 @@ const FacultyDashboard = () => {
                 </Link>
               </div>
             )}
-          </GlassCard>
+          </GlassCard> */}
         </div>
       </PageWrapper>
     </>
