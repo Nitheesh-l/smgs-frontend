@@ -33,7 +33,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { fetchJson } from "@/utils/api";
 import { toast } from "sonner";
-import { Plus, BookOpen, Filter, Trash2, Edit } from "lucide-react";
+import { Plus, BookOpen, Filter, Trash2, Edit, ExternalLink } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 
 type ExamType = "unit_test_internal_1" | "unit_test_internal_2" | "unit_test_external" | "lab_internal" | "lab_external";
@@ -51,6 +52,7 @@ interface Subject {
   code: string;
   semester: number;
   type: string; // "theory" | "lab" | "project" etc.
+  branch_code: string;
 }
 
 interface Mark {
@@ -106,6 +108,16 @@ const FacultyMarks = () => {
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
   const [assignedSubjects, setAssignedSubjects] = useState<string[]>([]);
   const [formSubjects, setFormSubjects] = useState<Subject[]>([]);
+
+  // Links/Updates state
+  const [links, setLinks] = useState<any[]>([]);
+  const [linksLoading, setLinksLoading] = useState(false);
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [linkForm, setLinkForm] = useState({
+    title: "",
+    description: "",
+    url: "",
+  });
 
   // Always show individual marks - no combining
   // This ensures Edit/Delete actions are always available
@@ -195,11 +207,26 @@ const FacultyMarks = () => {
     }
   };
 
+  const fetchLinks = async () => {
+    try {
+      setLinksLoading(true);
+      const { res, data } = await fetchJson("/api/links");
+      if (res.ok) {
+        setLinks(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error("Error fetching links:", error);
+    } finally {
+      setLinksLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (profile?.role === "faculty") {
       fetchData();
+      fetchLinks();
     }
-  }, [profile, selectedSemester, selectedSubjectType, selectedStudent, selectedYear, selectedBranch]);
+  }, [profile]);
 
   // Update year when semester changes
   useEffect(() => {
@@ -214,10 +241,11 @@ const FacultyMarks = () => {
       try {
         const params = new URLSearchParams();
         params.set('semester', formData.semester);
+        params.set('branch_code', selectedBranch); // Add branch filter
         const { res, data } = await fetchJson(`/api/subjects?${params.toString()}`);
         if (res.ok) {
           const all = Array.isArray(data) ? data : [];
-          let filtered = all.filter((s: Subject) => s.semester === Number(formData.semester));
+          let filtered = all.filter((s: Subject) => s.semester === Number(formData.semester) && s.branch_code === selectedBranch);
           if (assignedSubjects.length > 0) {
             filtered = filtered.filter((s: Subject) => assignedSubjects.includes(s._id));
           }
@@ -230,7 +258,7 @@ const FacultyMarks = () => {
     if (formData.semester) {
       fetchFormSubjects();
     }
-  }, [formData.semester, assignedSubjects]);
+  }, [formData.semester, selectedBranch, assignedSubjects]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -351,6 +379,64 @@ const FacultyMarks = () => {
       semester: String(mark.semester),
     });
     setIsDialogOpen(true);
+  };
+
+  // Links handlers
+  const handleAddLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkForm.title.trim() || !linkForm.description.trim()) {
+      toast.error("Title and description are required");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...linkForm,
+          created_by: profile?.full_name,
+          created_by_role: 'faculty'
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to add link");
+        return;
+      }
+
+      toast.success("Link/Update added successfully");
+      setLinks(prev => [data.link, ...prev]);
+      setLinkForm({ title: "", description: "", url: "" });
+      setShowLinkForm(false);
+    } catch (error) {
+      console.error("Add link error:", error);
+      toast.error("Failed to add link");
+    }
+  };
+
+  const handleDeleteLink = async (linkId: string) => {
+    if (!confirm("Are you sure you want to delete this link/update?")) return;
+
+    try {
+      const res = await fetch(`/api/links/${linkId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to delete link");
+        return;
+      }
+
+      toast.success("Link/Update deleted successfully");
+      setLinks(prev => prev.filter(link => link._id !== linkId));
+    } catch (error) {
+      console.error("Delete link error:", error);
+      toast.error("Failed to delete link");
+    }
   };
 
   if (authLoading || loading) {
@@ -818,6 +904,131 @@ const FacultyMarks = () => {
                 Add First Entry
               </Button>
             </div>
+          )}
+        </GlassCard>
+
+        {/* Links/Updates Section */}
+        <GlassCard className="p-6 mt-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-semibold">Links & Resources</h2>
+              <p className="text-muted-foreground text-sm">Share helpful links and resources with your students</p>
+            </div>
+            <Button
+              onClick={() => setShowLinkForm(!showLinkForm)}
+              className="bg-green-600 hover:bg-green-700"
+              size="sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Link
+            </Button>
+          </div>
+
+          {/* Add Link Form */}
+          {showLinkForm && (
+            <GlassCard className="p-4 mb-6 border-green-200 bg-green-50/50">
+              <h3 className="text-lg font-semibold mb-4">Add New Link/Resource</h3>
+              <form onSubmit={handleAddLink} className="space-y-4">
+                <div>
+                  <Label htmlFor="linkTitle" className="text-sm font-medium">
+                    Title
+                  </Label>
+                  <Input
+                    id="linkTitle"
+                    value={linkForm.title}
+                    onChange={(e) => setLinkForm(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Enter title for the link/resource"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="linkDescription" className="text-sm font-medium">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="linkDescription"
+                    value={linkForm.description}
+                    onChange={(e) => setLinkForm(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Enter description or content"
+                    className="mt-1"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="linkUrl" className="text-sm font-medium">
+                    URL (optional)
+                  </Label>
+                  <Input
+                    id="linkUrl"
+                    type="url"
+                    value={linkForm.url}
+                    onChange={(e) => setLinkForm(prev => ({ ...prev, url: e.target.value }))}
+                    placeholder="https://example.com or leave empty for content-only resource"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    type="submit"
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Add Link/Resource
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowLinkForm(false);
+                      setLinkForm({ title: "", description: "", url: "" });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </GlassCard>
+          )}
+
+          {/* Links List */}
+          {linksLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader size="md" text="Loading links..." />
+            </div>
+          ) : links.length > 0 ? (
+            <div className="space-y-4">
+              {links.map((link) => (
+                <div key={link._id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition">
+                  <div className="flex-1">
+                    <h4 className="font-semibold">{link.title}</h4>
+                    <p className="text-sm text-muted-foreground mt-1">{link.description}</p>
+                    {link.url && (
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        {link.url}
+                      </a>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Posted on {new Date(link.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteLink(link._id)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">No links or resources yet</p>
           )}
         </GlassCard>
       </PageWrapper>

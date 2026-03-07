@@ -34,6 +34,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Plus, Search, Edit, Trash2, Users, Phone, User, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Gender = "male" | "female" | "other";
 
@@ -47,6 +48,9 @@ interface Student {
   branch_code: string;
   created_at: string;
   profile_id: string | null;
+  batch?: string;
+  passout?: boolean;
+  passout_date?: string;
 }
 
 const studentSchema = z.object({
@@ -81,6 +85,7 @@ const FacultyStudents = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedYear, setSelectedYear] = useState<number>(1);
   const [showPassword, setShowPassword] = useState(false);
+  const [includePassout, setIncludePassout] = useState(false);
 
   const [formData, setFormData] = useState({
     roll_number: "",
@@ -100,7 +105,11 @@ const FacultyStudents = () => {
 
   const fetchStudents = async () => {
     try {
-      const { res, data } = await fetchJson(`/api/students?year_of_study=${selectedYear}`);
+      const params = new URLSearchParams({
+        year_of_study: selectedYear.toString(),
+        include_passout: includePassout.toString()
+      });
+      const { res, data } = await fetchJson(`/api/students?${params}`);
 
       if (!res.ok) {
         toast.error(data?.error || "Failed to fetch students");
@@ -124,7 +133,7 @@ const FacultyStudents = () => {
     if (!authLoading && profile) {
       fetchStudents();
     }
-  }, [profile, authLoading, selectedYear]);
+  }, [profile, authLoading, selectedYear, includePassout]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -460,6 +469,18 @@ const FacultyStudents = () => {
           ))}
         </div>
 
+        {/* Include Passout Checkbox */}
+        <div className="mb-6 flex items-center gap-2">
+          <Checkbox
+            id="includePassout"
+            checked={includePassout}
+            onCheckedChange={(checked) => setIncludePassout(checked as boolean)}
+          />
+          <Label htmlFor="includePassout" className="text-sm font-medium">
+            Include passout students
+          </Label>
+        </div>
+
         {/* Search */}
         <GlassCard className="p-4 mb-6">
           <div className="relative">
@@ -483,6 +504,8 @@ const FacultyStudents = () => {
                     <TableHead>Roll Number</TableHead>
                     <TableHead>Full Name</TableHead>
                     <TableHead>Year</TableHead>
+                    <TableHead>Batch</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Gender</TableHead>
                     <TableHead>Branch</TableHead>
                     <TableHead>Phone</TableHead>
@@ -497,6 +520,18 @@ const FacultyStudents = () => {
                       </TableCell>
                       <TableCell>{student.full_name || "-"}</TableCell>
                       <TableCell>{student.year_of_study}</TableCell>
+                      <TableCell>{student.batch || "-"}</TableCell>
+                      <TableCell>
+                        {student.passout ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            Passout
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Active
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell>{student.gender}</TableCell>
                       <TableCell>{student.branch_code}</TableCell>
                       <TableCell>{student.phone_number || "-"}</TableCell>

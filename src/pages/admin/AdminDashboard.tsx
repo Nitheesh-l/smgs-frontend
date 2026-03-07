@@ -4,12 +4,14 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import GlassCard from "@/components/ui/GlassCard";
 import Loader from "@/components/ui/Loader";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { fetchJson } from "@/utils/api";
-import { Shield, Mail, Lock, User, LogOut, Trash2, Edit } from "lucide-react";
+import { Shield, Mail, Lock, User, LogOut, Trash2, Edit, Plus, MessageSquare, ExternalLink } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -18,6 +20,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const addFacultySchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -70,6 +79,32 @@ const AdminDashboard = () => {
   const [selectedYear, setSelectedYear] = useState<number>(1);
   const [selectedSemester, setSelectedSemester] = useState<number>(1);
 
+  // Links/Updates state - now integrated into notifications
+  const [links, setLinks] = useState<any[]>([]);
+  const [linksLoading, setLinksLoading] = useState(false);
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [linkForm, setLinkForm] = useState({
+    title: "",
+    description: "",
+    url: "",
+    file_url: "",
+    file_name: "",
+  });
+
+  // Notifications state
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [showNotificationForm, setShowNotificationForm] = useState(false);
+  const [notificationForm, setNotificationForm] = useState({
+    title: "",
+    content: "",
+    type: "announcement",
+    target_year: "0",
+    url: "",
+  });
+
   const [facultyForm, setFacultyForm] = useState<FacultyForm>({
     email: "",
     password: "",
@@ -91,9 +126,11 @@ const AdminDashboard = () => {
   const loadData = async () => {
     setFactsLoading(true);
     try {
-      const [subjectsRes, facultyRes] = await Promise.all([
+      const [subjectsRes, facultyRes, linksRes, notificationsRes] = await Promise.all([
         fetchJson("/api/subjects"),
         fetchJson("/api/profiles/faculty/list"),
+        fetchJson("/api/links"),
+        fetchJson("/api/notifications"),
       ]);
 
       if (subjectsRes.res.ok) {
@@ -107,6 +144,14 @@ const AdminDashboard = () => {
 
       if (facultyRes.res.ok) {
         setFaculty(facultyRes.data);
+      }
+
+      if (linksRes.res.ok) {
+        setLinks(linksRes.data);
+      }
+
+      if (notificationsRes.res.ok) {
+        setNotifications(notificationsRes.data);
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -283,6 +328,128 @@ const AdminDashboard = () => {
       toast.error("Failed to delete faculty member");
     } finally {
       setDeleting(null);
+    }
+  };
+
+  // Links/Updates handlers
+  const handleAddLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkForm.title.trim() || !linkForm.description.trim()) {
+      toast.error("Title and description are required");
+      return;
+    }
+
+    setLinkLoading(true);
+    try {
+      const res = await fetch("/api/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...linkForm,
+          created_by: profile?.full_name,
+          created_by_role: 'admin'
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to add link");
+        return;
+      }
+
+      toast.success("Link/Update added successfully");
+      setLinks(prev => [data.link, ...prev]);
+      setLinkForm({ title: "", description: "", url: "", file_url: "", file_name: "" });
+      setShowLinkForm(false);
+    } catch (error) {
+      console.error("Add link error:", error);
+      toast.error("Failed to add link");
+    } finally {
+      setLinkLoading(false);
+    }
+  };
+
+  const handleDeleteLink = async (linkId: string) => {
+    if (!confirm("Are you sure you want to delete this link/update?")) return;
+
+    try {
+      const res = await fetch(`/api/links/${linkId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to delete link");
+        return;
+      }
+
+      toast.success("Link/Update deleted successfully");
+      setLinks(prev => prev.filter(link => link._id !== linkId));
+    } catch (error) {
+      console.error("Delete link error:", error);
+      toast.error("Failed to delete link");
+    }
+  };
+
+  // Notifications handlers
+  const handleAddNotification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!notificationForm.title.trim() || !notificationForm.content.trim()) {
+      toast.error("Title and content are required");
+      return;
+    }
+
+    setNotificationLoading(true);
+    try {
+      const res = await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...notificationForm,
+          created_by: profile?.full_name,
+          created_by_role: 'admin'
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to add notification");
+        return;
+      }
+
+      toast.success("Notification added successfully");
+      setNotifications(prev => [data.notification, ...prev]);
+      setNotificationForm({ title: "", content: "", target_year: "0", type: "announcement", url: "" });
+      setShowNotificationForm(false);
+    } catch (error) {
+      console.error("Add notification error:", error);
+      toast.error("Failed to add notification");
+    } finally {
+      setNotificationLoading(false);
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId: string) => {
+    if (!confirm("Are you sure you want to delete this notification?")) return;
+
+    try {
+      const res = await fetch(`/api/notifications/${notificationId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to delete notification");
+        return;
+      }
+
+      toast.success("Notification deleted successfully");
+      setNotifications(prev => prev.filter(notification => notification._id !== notificationId));
+    } catch (error) {
+      console.error("Delete notification error:", error);
+      toast.error("Failed to delete notification");
     }
   };
 
@@ -640,8 +807,323 @@ const AdminDashboard = () => {
             <p className="text-muted-foreground text-center py-8">No faculty members yet</p>
           )}
         </GlassCard>
+
+        {/* Links/Updates Management Section */}
+        <GlassCard className="p-6 mt-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-semibold">Links & Resources</h2>
+              <p className="text-muted-foreground text-sm">Share PDFs, resources, and important updates with faculty and students</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowLinkForm(!showLinkForm)}
+                className="bg-green-600 hover:bg-green-700"
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Link
+              </Button>
+            </div>
+          </div>
+
+          {/* Add Link/Update Form */}
+          {showLinkForm && (
+            <GlassCard className="p-4 mb-6 border-green-200 bg-green-50/50">
+              <h3 className="text-lg font-semibold mb-4">Add New Link/Resource</h3>
+              <form onSubmit={handleAddLink} className="space-y-4">
+                <div>
+                  <Label htmlFor="linkTitle" className="text-sm font-medium">
+                    Title
+                  </Label>
+                  <Input
+                    id="linkTitle"
+                    value={linkForm.title}
+                    onChange={(e) => setLinkForm(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Enter title for the link/update"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="linkDescription" className="text-sm font-medium">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="linkDescription"
+                    value={linkForm.description}
+                    onChange={(e) => setLinkForm(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Enter description or content"
+                    className="mt-1"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="linkUrl" className="text-sm font-medium">
+                    URL (optional)
+                  </Label>
+                  <Input
+                    id="linkUrl"
+                    type="url"
+                    value={linkForm.url}
+                    onChange={(e) => setLinkForm(prev => ({ ...prev, url: e.target.value }))}
+                    placeholder="https://example.com or leave empty for content-only update"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    type="submit"
+                    disabled={linkLoading}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {linkLoading ? "Adding..." : "Add Link/Update"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowLinkForm(false);
+                      setLinkForm({ title: "", description: "", url: "", file_url: "", file_name: "" });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </GlassCard>
+          )}
+
+          {/* Links/Updates List */}
+          {linksLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader size="md" text="Loading links..." />
+            </div>
+          ) : links.length > 0 ? (
+            <div className="space-y-4">
+              {links.map((link) => (
+                <div key={link._id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition">
+                  <div className="flex-1">
+                    <h4 className="font-semibold">{link.title}</h4>
+                    <p className="text-sm text-muted-foreground mt-1">{link.description}</p>
+                    {link.url && (
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        {link.url}
+                      </a>
+                    )}
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        Posted on {new Date(link.created_at).toLocaleDateString()}
+                        {link.created_by && ` by ${link.created_by}`}
+                        {link.created_by_role && (
+                          <Badge variant="outline" className="text-xs text-blue-600 ml-2">
+                            {link.created_by_role === 'faculty' ? 'Faculty' : 'Admin'}
+                          </Badge>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteLink(link._id)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">No links or updates yet</p>
+          )}
+        </GlassCard>
+
+        {/* Notifications, Assignments & Links Management Section */}
+        <GlassCard className="p-6 mt-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-semibold">Notifications, Assignments & Links</h2>
+              <p className="text-muted-foreground text-sm">Post announcements, assignments, and links for students</p>
+            </div>
+            <Button
+              onClick={() => setShowNotificationForm(!showNotificationForm)}
+              className="bg-purple-600 hover:bg-purple-700"
+              size="sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Notification
+            </Button>
+          </div>
+
+          {/* Add Notification Form */}
+          {showNotificationForm && (
+            <GlassCard className="p-4 mb-6 border-purple-200 bg-purple-50/50">
+              <h3 className="text-lg font-semibold mb-4">Add New Notification</h3>
+              <form onSubmit={handleAddNotification} className="space-y-4">
+                <div>
+                  <Label htmlFor="notificationTitle" className="text-sm font-medium">
+                    Title
+                  </Label>
+                  <Input
+                    id="notificationTitle"
+                    value={notificationForm.title}
+                    onChange={(e) => setNotificationForm(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Enter notification title"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="notificationContent" className="text-sm font-medium">
+                    Content
+                  </Label>
+                  <Textarea
+                    id="notificationContent"
+                    value={notificationForm.content}
+                    onChange={(e) => setNotificationForm(prev => ({ ...prev, content: e.target.value }))}
+                    placeholder="Enter notification content or assignment details"
+                    className="mt-1"
+                    rows={4}
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Target Audience</Label>
+                  <Select
+                    value={notificationForm.target_year}
+                    onValueChange={(value) => setNotificationForm(prev => ({ ...prev, target_year: value }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select target audience" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">All Years</SelectItem>
+                      <SelectItem value="1">Year 1 Only</SelectItem>
+                      <SelectItem value="2">Year 2 Only</SelectItem>
+                      <SelectItem value="3">Year 3 Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Type</Label>
+                  <Select
+                    value={notificationForm.type}
+                    onValueChange={(value) => setNotificationForm(prev => ({ ...prev, type: value }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="announcement">Announcement</SelectItem>
+                      <SelectItem value="assignment">Assignment</SelectItem>
+                      <SelectItem value="update">Update</SelectItem>
+                      <SelectItem value="reminder">Reminder</SelectItem>
+                      <SelectItem value="link">Link/Resource</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {notificationForm.type === "link" && (
+                  <div>
+                    <Label htmlFor="notificationUrl" className="text-sm font-medium">
+                      URL (optional)
+                    </Label>
+                    <Input
+                      id="notificationUrl"
+                      type="url"
+                      value={notificationForm.url}
+                      onChange={(e) => setNotificationForm(prev => ({ ...prev, url: e.target.value }))}
+                      placeholder="https://example.com or leave empty for content-only"
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <Button
+                    type="submit"
+                    disabled={notificationLoading}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    {notificationLoading ? "Adding..." : "Add Notification"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowNotificationForm(false);
+                      setNotificationForm({ title: "", content: "", target_year: "0", type: "announcement", url: "" });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </GlassCard>
+          )}
+
+          {/* Notifications List */}
+          {notificationsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader size="md" text="Loading notifications..." />
+            </div>
+          ) : notifications.length > 0 ? (
+            <div className="space-y-4">
+              {notifications.map((notification) => (
+                <div key={notification._id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-semibold">{notification.title}</h4>
+                      <Badge variant="outline" className="text-xs">
+                        {notification.type}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {notification.target_year === "0" ? "All Years" : `Year ${notification.target_year}`}
+                      </Badge>
+                      {notification.created_by_role && (
+                        <Badge variant="outline" className="text-xs text-blue-600">
+                          {notification.created_by_role === 'faculty' ? 'Faculty' : 'Admin'}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{notification.content}</p>
+                    {notification.url && (
+                      <a
+                        href={notification.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        {notification.url}
+                      </a>
+                    )}
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        Posted on {new Date(notification.created_at).toLocaleDateString()}
+                        {notification.created_by && ` by ${notification.created_by}`}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteNotification(notification._id)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">No notifications yet</p>
+          )}
+        </GlassCard>
       </div>
-    </div>  
+    </div>
   );
 };
 

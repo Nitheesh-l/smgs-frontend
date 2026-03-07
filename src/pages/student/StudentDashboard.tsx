@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchJson } from "@/utils/api";
 import { toast } from "sonner";
-import { Calendar, BookOpen, TrendingUp, Award } from "lucide-react";
+import { Calendar, BookOpen, TrendingUp, Award, Bell, ExternalLink } from "lucide-react";
 
 const StudentDashboard = () => {
   const { profile, loading: authLoading } = useAuth();
@@ -30,6 +30,12 @@ const StudentDashboard = () => {
   });
   const [showChangeDialog, setShowChangeDialog] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+
+  // Links and Notifications state
+  const [links, setLinks] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [linksLoading, setLinksLoading] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!profile || profile.role !== "student")) {
@@ -115,6 +121,27 @@ const StudentDashboard = () => {
           unitTestInternal2,
           unitTestExternal,
         });
+
+        // Fetch links and notifications
+        try {
+          setLinksLoading(true);
+          setNotificationsLoading(true);
+
+          const { res: linksRes, data: linksData } = await fetchJson("/api/links");
+          if (linksRes.ok) {
+            setLinks(Array.isArray(linksData) ? linksData : []);
+          }
+
+          const { res: notifRes, data: notifData } = await fetchJson(`/api/notifications?target_year=${student.year_of_study}`);
+          if (notifRes.ok) {
+            setNotifications(Array.isArray(notifData) ? notifData : []);
+          }
+        } catch (error) {
+          console.error("Error fetching links/notifications:", error);
+        } finally {
+          setLinksLoading(false);
+          setNotificationsLoading(false);
+        }
       } catch (error) {
         console.error("Error fetching student data:", error);
       } finally {
@@ -313,6 +340,87 @@ const StudentDashboard = () => {
             </div>
           </GlassCard>
         </div>
+
+        {/* Links & Resources Section */}
+        <GlassCard className="p-6 mt-8">
+          <div className="flex items-center gap-2 mb-6">
+            <ExternalLink className="w-5 h-5 text-green-600" />
+            <h2 className="text-xl font-semibold">Links & Resources</h2>
+          </div>
+
+          {linksLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader size="md" text="Loading links..." />
+            </div>
+          ) : links.length > 0 ? (
+            <div className="space-y-4">
+              {links.map((link) => (
+                <div key={link._id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition">
+                  <div className="flex-1">
+                    <h4 className="font-semibold">{link.title}</h4>
+                    <p className="text-sm text-muted-foreground mt-1">{link.description}</p>
+                    {link.url && (
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        {link.url}
+                      </a>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Posted on {new Date(link.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">No links or resources available</p>
+          )}
+        </GlassCard>
+
+        {/* Notifications & Assignments Section */}
+        <GlassCard className="p-6 mt-8">
+          <div className="flex items-center gap-2 mb-6">
+            <Bell className="w-5 h-5 text-purple-600" />
+            <h2 className="text-xl font-semibold">Notifications & Assignments</h2>
+          </div>
+
+          {notificationsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader size="md" text="Loading notifications..." />
+            </div>
+          ) : notifications.length > 0 ? (
+            <div className="space-y-4">
+              {notifications.map((notification) => (
+                <div key={notification._id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-semibold">{notification.title}</h4>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        notification.type === 'announcement' ? 'bg-blue-100 text-blue-700' :
+                        notification.type === 'assignment' ? 'bg-orange-100 text-orange-700' :
+                        notification.type === 'update' ? 'bg-green-100 text-green-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {notification.type}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{notification.content}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Posted on {new Date(notification.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">No notifications available</p>
+          )}
+        </GlassCard>
 
         {/* Change Password Dialog */}
 
