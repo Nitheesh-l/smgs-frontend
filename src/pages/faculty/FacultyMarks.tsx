@@ -53,6 +53,11 @@ interface Subject {
   semester: number;
   type: string; // "theory" | "lab" | "project" etc.
   branch_code: string;
+  marks?: {
+    sessional?: number;
+    external?: number;
+    ut?: number;
+  };
 }
 
 interface Mark {
@@ -76,6 +81,14 @@ const examTypeOptions: { value: ExamType; label: string }[] = [
   { value: "lab_internal", label: "Lab Internal" },
   { value: "lab_external", label: "Lab External" },
 ];
+
+const getSubjectTotalMarks = (subject: Subject) => {
+  if (subject.type === 'lab') {
+    return (subject.marks as any).sessional + (subject.marks as any).external;
+  } else {
+    return (subject.marks as any).ut + (subject.marks as any).external;
+  }
+};
 
 
 const FacultyMarks = () => {
@@ -108,6 +121,12 @@ const FacultyMarks = () => {
   const [editingMark, setEditingMark] = useState<Mark | null>(null);
   const [assignedSubjects, setAssignedSubjects] = useState<string[]>([]);
   const [formSubjects, setFormSubjects] = useState<Subject[]>([]);
+
+  // Bulk marks entry state
+  const [selectedSubjectForBulk, setSelectedSubjectForBulk] = useState<string>("");
+  const [selectedExamTypeForBulk, setSelectedExamTypeForBulk] = useState<ExamType>("unit_test_internal_1");
+  const [bulkMarksInputs, setBulkMarksInputs] = useState<Record<string, string>>({});
+  const [customTotalMarks, setCustomTotalMarks] = useState<string>("100");
 
   // Links/Updates state
   const [links, setLinks] = useState<any[]>([]);
@@ -150,7 +169,13 @@ const FacultyMarks = () => {
       studParams.set('branch_code', selectedBranch);
       const { res: studRes, data: studData } = await fetchJson(`/api/students?${studParams.toString()}`);
       if (studRes.ok) {
-        setStudents(Array.isArray(studData) ? studData : []);
+        const list = Array.isArray(studData) ? studData : [];
+        setStudents(list);
+        // if current selectedStudent no longer exists, clear it
+        if (selectedStudent && !list.find((s: Student) => s._id === selectedStudent)) {
+          setSelectedStudent("");
+          setMarks([]);
+        }
       }
 
       // Get faculty's assigned subjects from profile
@@ -222,17 +247,44 @@ const FacultyMarks = () => {
   };
 
   useEffect(() => {
+    // refetch whenever any of the filters change
     if (profile?.role === "faculty") {
       fetchData();
       fetchLinks();
     }
-  }, [profile]);
+  }, [
+    profile,
+    selectedYear,
+    selectedSemester,
+    selectedBranch,
+    selectedStudent,
+    selectedSubjectType,
+    assignedSubjects,
+  ]);
+
 
   // Update year when semester changes
   useEffect(() => {
     const newYear = Math.ceil(Number(selectedSemester) / 2);
     setSelectedYear(String(newYear));
   }, [selectedSemester]);
+
+  // Update semester when year changes (first semester of that year)
+  useEffect(() => {
+    const yearNum = Number(selectedYear);
+    if (!isNaN(yearNum)) {
+      const newSem = (yearNum - 1) * 2 + 1;
+      if (selectedSemester !== String(newSem)) {
+        setSelectedSemester(String(newSem));
+      }
+    }
+  }, [selectedYear]);
+
+  useEffect(() => {
+    setSelectedSubjectForBulk("");
+    setBulkMarksInputs({});
+    setCustomTotalMarks("100");
+  }, [selectedYear, selectedSemester, selectedBranch]);
 
   // Fetch subjects for form semester
   useEffect(() => {
@@ -436,6 +488,64 @@ const FacultyMarks = () => {
     } catch (error) {
       console.error("Delete link error:", error);
       toast.error("Failed to delete link");
+    }
+  };
+
+  const handleBulkSubmit = async () => {
+    if (!selectedSubjectForBulk) {
+      toast.error("Please select a subject");
+      return;
+    }
+    const subject = subjects.find(s => s._id === selectedSubjectForBulk);
+    if (!subject) {
+      toast.error("Subject not found");
+      return;
+    }
+    const totalMarks = Number(customTotalMarks) || 100;
+    const entries = Object.entries(bulkMarksInputs).filter(([_, marks]) => marks.trim() !== '');
+    if (entries.length === 0) {
+      toast.error("No marks entered");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      for (const [studentId, marksStr] of entries) {
+        const marksObtained = Number(marksStr);
+        if (isNaN(marksObtained) || marksObtained < 0 || marksObtained > totalMarks) {
+          toast.error(`Invalid marks for student ${students.find(s => s._id === studentId)?.roll_number}. Must be between 0 and ${totalMarks}`);
+          return;
+        }
+        const payload = {
+          student_id: studentId,
+          subject_id: selectedSubjectForBulk,
+          marks_obtained: marksObtained,
+          total_marks: totalMarks,
+          exam_type: selectedExamTypeForBulk,
+          academic_year: "2025-26",
+          semester: Number(selectedSemester),
+          entered_by: profile?.id,
+        };
+        const existingMark = marks.find(m => m.student_id === studentId && m.subject_id === selectedSubjectForBulk && m.exam_type === selectedExamTypeForBulk);
+        const method = existingMark ? 'PUT' : 'POST';
+        const url = existingMark ? `/api/marks/${existingMark._id}` : '/api/marks';
+        const { res, data } = await fetchJson(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          toast.error(data?.error || `Failed to save marks for ${students.find(s => s._id === studentId)?.roll_number}`);
+          return;
+        }
+      }
+      toast.success("Bulk marks saved successfully");
+      setBulkMarksInputs({});
+      fetchData(); // refresh marks
+    } catch (error) {
+      console.error("Bulk submit error:", error);
+      toast.error("Failed to save marks");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -765,34 +875,114 @@ const FacultyMarks = () => {
             </div>
           </div>
 
-          {students.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {students.map((stu) => (
-                <div
-                  key={stu._id}
-                  className={`flex items-center justify-between p-3 rounded-lg border transition 
-                    ${selectedStudent === stu._id ? 'border-primary bg-primary/10' : 'border-border'}
-                  `}
+          {subjects.length > 0 && (
+            <div className="flex flex-wrap gap-4 items-center mb-4 p-4 bg-muted/50 rounded-lg sm:text-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Bulk Marks Entry:</span>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto p-2">
+                <span className="bg-cyan-300 text-sm text-muted-foreground">Subject:</span>
+                <select
+                  value={selectedSubjectForBulk}
+                  onChange={(e) => setSelectedSubjectForBulk(e.target.value)}
+                  className="px-2 py-1 w-full border border-border rounded-md bg-background text-sm sm:text-wrap"
                 >
-                  <div>
-                    <p className="font-medium">{stu.roll_number}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Year {stu.year_of_study} • {stu.branch_code}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setSelectedStudent(stu._id);
-                      setFormData((f) => ({ ...f, student_id: stu._id, semester: selectedSemester }));
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    Add Marks
+                  <option className="bg-cyan-300 w-fit" value="">Select Subject</option>
+                  {subjects.map((s) => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Exam Type:</span>
+                <select
+                  value={selectedExamTypeForBulk}
+                  onChange={(e) => setSelectedExamTypeForBulk(e.target.value as ExamType)}
+                  className="px-2 py-1 border border-border rounded-md bg-background text-sm"
+                >
+                  {examTypeOptions.map((op) => <option key={op.value} value={op.value}>{op.label}</option>)}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Total Marks:</span>
+                <Input
+                  type="number"
+                  value={customTotalMarks}
+                  onChange={(e) => setCustomTotalMarks(e.target.value)}
+                  className="w-20"
+                  min="1"
+                />
+              </div>
+            </div>
+          )}
+
+          {students.length > 0 ? (
+            selectedSubjectForBulk ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Roll Number</TableHead>
+                      <TableHead>Marks (out of {Number(customTotalMarks) || 100})</TableHead>
+                      {/* <TableHead>Total Marks</TableHead> */}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {students.map((stu) => {
+                      const existingMark = marks.find(m => m.student_id === stu._id && m.subject_id === selectedSubjectForBulk && m.exam_type === selectedExamTypeForBulk);
+                      return (
+                        <TableRow key={stu._id}>
+                          <TableCell className="font-medium">{stu.roll_number}</TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={bulkMarksInputs[stu._id] || ''}
+                              onChange={(e) => setBulkMarksInputs(prev => ({ ...prev, [stu._id]: e.target.value }))}
+                              placeholder="Enter marks"
+                              className="w-24"
+                              min="0"
+                              max={Number(customTotalMarks) || 100}
+                            />
+                          </TableCell>
+                          {/* <TableCell>{existingMark ? existingMark.total_marks : 'N/A'}</TableCell> */}
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+                <div className="flex justify-end mt-4">
+                  <Button onClick={handleBulkSubmit} disabled={submitting} className="btn-gradient">
+                    {submitting ? <Loader size="sm" /> : "Save Bulk Marks"}
                   </Button>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {students.map((stu) => (
+                  <div
+                    key={stu._id}
+                    className={`flex items-center justify-between p-3 rounded-lg border transition 
+                      ${selectedStudent === stu._id ? 'border-primary bg-primary/10' : 'border-border'}
+                    `}
+                  >
+                    <div>
+                      <p className="font-medium">{stu.roll_number}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Year {stu.year_of_study} • {stu.branch_code}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setSelectedStudent(stu._id);
+                        setFormData((f) => ({ ...f, student_id: stu._id, semester: selectedSemester }));
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      Add Marks
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )
           ) : (
             <p className="text-muted-foreground text-sm">
               No students found for selected year/branch

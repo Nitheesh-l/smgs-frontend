@@ -1049,7 +1049,7 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Target Audience</Label>
+                  <Label className="text-sm font-medium">Students</Label>
                   <Select
                     value={notificationForm.target_year}
                     onValueChange={(value) => setNotificationForm(prev => ({ ...prev, target_year: value }))}

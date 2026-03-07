@@ -53,7 +53,6 @@ const FacultyDashboard = () => {
     url: "",
   });
 
-  // Promotion state
   const [promotionLoading, setPromotionLoading] = useState(false);
 
   useEffect(() => {
