@@ -287,22 +287,23 @@ const FacultyDashboard = () => {
       <GlassNav role="faculty" userName={profile?.full_name} />
       <PageWrapper>
         {/* Welcome Section */}
-        <div className="mb-8 mt-4">
-          <h1 className="text-3xl font-bold mb-2">
+        <div className="mb-6 sm:mb-8 mt-4">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
             Welcome back, <span className="text-gradient">{profile?.full_name}</span>
           </h1>
           
         </div>
 
         {/* Year Selector */}
-        <div className="mb-8 flex gap-4">
-          <p className="text-muted-foreground font-medium flex items-center">Filter by Year:</p>
+        <div className="mb-8 flex flex-wrap gap-2 sm:gap-4">
+          <p className="text-muted-foreground font-medium flex items-center text-sm sm:text-base">Filter by Year:</p>
           {[1, 2, 3].map((year) => (
             <Button
               key={year}
               variant={selectedYear === year ? "default" : "outline"}
               onClick={() => setSelectedYear(year)}
-              className="min-w-[80px]"
+              className="min-w-[70px] sm:min-w-[80px] text-sm"
+              size="sm"
             >
               Year {year}
             </Button>
@@ -310,7 +311,7 @@ const FacultyDashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <StatCard
             title={`Total Students (Year ${selectedYear})`}
             value={stats.totalStudents}
@@ -340,42 +341,42 @@ const FacultyDashboard = () => {
         {/* Quick Actions & Recent Students */}
         <div className="grid gap-6">
           {/* Quick Actions */}
-          <GlassCard className="p-6">
+          <GlassCard className="p-4 sm:p-6">
             <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
               <Link to="/faculty/students">
-                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer group">
-                  <UserPlus className="w-8 h-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium">Add Student</p>
-                  <p className="text-sm text-muted-foreground">Register new student</p>
+                <div className="p-3 sm:p-4 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer group">
+                  <UserPlus className="w-6 sm:w-8 h-6 sm:h-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
+                  <p className="font-medium text-sm sm:text-base">Add Student</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Register new student</p>
                 </div>
               </Link>
               <Link to="/faculty/attendance">
-                <div className="p-4 rounded-xl bg-success/5 border border-success/20 hover:bg-success/10 transition-colors cursor-pointer group">
-                  <ClipboardCheck className="w-8 h-8 text-success mb-2 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium">Mark Attendance</p>
-                  <p className="text-sm text-muted-foreground">Today's attendance</p>
+                <div className="p-3 sm:p-4 rounded-xl bg-success/5 border border-success/20 hover:bg-success/10 transition-colors cursor-pointer group">
+                  <ClipboardCheck className="w-6 sm:w-8 h-6 sm:h-8 text-success mb-2 group-hover:scale-110 transition-transform" />
+                  <p className="font-medium text-sm sm:text-base">Mark Attendance</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Today's attendance</p>
                 </div>
               </Link>
               <Link to="/faculty/marks">
-                <div className="p-4 rounded-xl bg-accent/5 border border-accent/20 hover:bg-accent/10 transition-colors cursor-pointer group">
-                  <BookOpen className="w-8 h-8 text-accent mb-2 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium">Enter Marks</p>
-                  <p className="text-sm text-muted-foreground">Exam marks entry</p>
+                <div className="p-3 sm:p-4 rounded-xl bg-accent/5 border border-accent/20 hover:bg-accent/10 transition-colors cursor-pointer group">
+                  <BookOpen className="w-6 sm:w-8 h-6 sm:h-8 text-accent mb-2 group-hover:scale-110 transition-transform" />
+                  <p className="font-medium text-sm sm:text-base">Enter Marks</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Exam marks entry</p>
                 </div>
               </Link>
               <Link to="/faculty/subjects">
-                <div className="p-4 rounded-xl bg-warning/5 border border-warning/20 hover:bg-warning/10 transition-colors cursor-pointer group">
-                  <BookOpen className="w-8 h-8 text-warning mb-2 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium">Subjects</p>
-                  <p className="text-sm text-muted-foreground">View or add subjects</p>
+                <div className="p-3 sm:p-4 rounded-xl bg-warning/5 border border-warning/20 hover:bg-warning/10 transition-colors cursor-pointer group">
+                  <BookOpen className="w-6 sm:w-8 h-6 sm:h-8 text-warning mb-2 group-hover:scale-110 transition-transform" />
+                  <p className="font-medium text-sm sm:text-base">Subjects</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">View or add subjects</p>
                 </div>
               </Link>
               <Link to="/faculty/students">
-                <div className="p-4 rounded-xl bg-warning/5 border border-warning/20 hover:bg-warning/10 transition-colors cursor-pointer group">
-                  <Users className="w-8 h-8 text-warning mb-2 group-hover:scale-110 transition-transform" />
-                  <p className="font-medium">View Students</p>
-                  <p className="text-sm text-muted-foreground">Manage students</p>
+                <div className="p-3 sm:p-4 rounded-xl bg-warning/5 border border-warning/20 hover:bg-warning/10 transition-colors cursor-pointer group col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-1">
+                  <Users className="w-6 sm:w-8 h-6 sm:h-8 text-warning mb-2 group-hover:scale-110 transition-transform" />
+                  <p className="font-medium text-sm sm:text-base">View Students</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Manage students</p>
                 </div>
               </Link>
             </div>
@@ -383,13 +384,13 @@ const FacultyDashboard = () => {
         </div>
 
         {/* Notifications & Assignments Section */}
-        <GlassCard className="p-6 mt-8">
-          <div className="flex items-center justify-between mb-6">
+        <GlassCard className="p-4 sm:p-6 mt-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
               <h2 className="text-xl font-semibold">Notifications & Links</h2>
               <p className="text-muted-foreground text-sm">Post announcements, assignments, and share resources with your students</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={() => setShowNotificationForm(!showNotificationForm)}
                 className="bg-purple-600 hover:bg-purple-700"
@@ -489,7 +490,7 @@ const FacultyDashboard = () => {
                     />
                   </div>
                 )}
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     type="submit"
                     className="bg-purple-600 hover:bg-purple-700"
@@ -554,7 +555,7 @@ const FacultyDashboard = () => {
                     className="mt-1"
                   />
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     type="submit"
                     className="bg-green-600 hover:bg-green-700"
@@ -584,41 +585,43 @@ const FacultyDashboard = () => {
           ) : notifications.length > 0 ? (
             <div className="space-y-4">
               {notifications.map((notification) => (
-                <div key={notification._id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-semibold">{notification.title}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {notification.type}
-                      </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {notification.target_year === "0" ? "All Years" : `Year ${notification.target_year}`}
-                      </Badge>
+                <div key={notification._id} className="p-4 border border-border rounded-lg hover:bg-accent/50 transition">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h4 className="font-semibold break-words">{notification.title}</h4>
+                        <Badge variant="outline" className="text-xs shrink-0">
+                          {notification.type}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs shrink-0">
+                          {notification.target_year === "0" ? "All Years" : `Year ${notification.target_year}`}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground break-words">{notification.content}</p>
+                      {notification.url && (
+                        <a
+                          href={notification.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-flex items-center gap-1 break-all"
+                        >
+                          <ExternalLink className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{notification.url}</span>
+                        </a>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Posted on {new Date(notification.created_at).toLocaleDateString()}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">{notification.content}</p>
-                    {notification.url && (
-                      <a
-                        href={notification.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-flex items-center gap-1"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        {notification.url}
-                      </a>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Posted on {new Date(notification.created_at).toLocaleDateString()}
-                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteNotification(notification._id)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0 self-start sm:self-center"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteNotification(notification._id)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
                 </div>
               ))}
             </div>
@@ -636,33 +639,35 @@ const FacultyDashboard = () => {
             ) : links.length > 0 ? (
               <div className="space-y-4">
                 {links.map((link) => (
-                  <div key={link._id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition">
-                    <div className="flex-1">
-                      <h4 className="font-semibold">{link.title}</h4>
-                      <p className="text-sm text-muted-foreground mt-1">{link.description}</p>
-                      {link.url && (
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-flex items-center gap-1"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          {link.url}
-                        </a>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Posted on {new Date(link.created_at).toLocaleDateString()}
-                      </p>
+                  <div key={link._id} className="p-4 border border-border rounded-lg hover:bg-accent/50 transition">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold break-words">{link.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1 break-words">{link.description}</p>
+                        {link.url && (
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-flex items-center gap-1 break-all "
+                          >
+                            <ExternalLink className="w-3 h-3 shrink-0" />
+                            <span className="truncate sm:text-wrap">Link</span>
+                          </a>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Posted on {new Date(link.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteLink(link._id)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0 self-start sm:self-center"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteLink(link._id)}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
                   </div>
                 ))}
               </div>
@@ -673,13 +678,13 @@ const FacultyDashboard = () => {
         </GlassCard>
 
         {/* Student Promotion Section */}
-        <GlassCard className="p-6 mt-8">
+        <GlassCard className="p-4 sm:p-6 mt-8">
           <div className="mb-6">
             <h2 className="text-xl font-semibold">Student Promotion</h2>
             <p className="text-muted-foreground text-sm">Promote students to next year or mark final year students as passout</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {/* Year 1 to Year 2 */}
             <div className="p-4 border border-border rounded-lg bg-blue-50/50">
               <h3 className="font-semibold mb-2 text-blue-700">Year 1 → Year 2</h3>

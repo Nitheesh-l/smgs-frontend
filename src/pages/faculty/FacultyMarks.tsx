@@ -907,7 +907,7 @@ const FacultyMarks = () => {
           )}
         </GlassCard>
 
-        {/* Links/Updates Section */}
+        {/* Links/Updates Section
         <GlassCard className="p-6 mt-8">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -925,7 +925,7 @@ const FacultyMarks = () => {
           </div>
 
           {/* Add Link Form */}
-          {showLinkForm && (
+          {/* {showLinkForm && (
             <GlassCard className="p-4 mb-6 border-green-200 bg-green-50/50">
               <h3 className="text-lg font-semibold mb-4">Add New Link/Resource</h3>
               <form onSubmit={handleAddLink} className="space-y-4">
@@ -987,10 +987,10 @@ const FacultyMarks = () => {
                 </div>
               </form>
             </GlassCard>
-          )}
+          )} */} 
 
           {/* Links List */}
-          {linksLoading ? (
+          {/* {linksLoading ? (
             <div className="flex justify-center py-8">
               <Loader size="md" text="Loading links..." />
             </div>
@@ -1030,7 +1030,7 @@ const FacultyMarks = () => {
           ) : (
             <p className="text-muted-foreground text-center py-8">No links or resources yet</p>
           )}
-        </GlassCard>
+        </GlassCard> */}
       </PageWrapper>
     </>
   );

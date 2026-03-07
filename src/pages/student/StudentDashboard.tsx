@@ -367,7 +367,7 @@ const StudentDashboard = () => {
                         className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-flex items-center gap-1"
                       >
                         <ExternalLink className="w-3 h-3" />
-                        {link.url}
+                        Link
                       </a>
                     )}
                     <p className="text-xs text-muted-foreground mt-2">

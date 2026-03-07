@@ -249,16 +249,16 @@ const FacultyAttendance = () => {
       <GlassNav role="faculty" userName={profile?.full_name} />
       <PageWrapper>
         {/* Header */}
-        <div className="mb-8 mt-4">
-          <h1 className="text-3xl font-bold mb-2">Periods-based Attendance </h1>
+        <div className="mb-6 sm:mb-8 mt-4">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Periods-based Attendance </h1>
           
         </div>
 
         {/* Controls */}
-        <GlassCard className="p-6 mb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <GlassCard className="p-4 sm:p-6 mb-6">
+          <div className="flex flex-col gap-4">
             {/* Date Navigation */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-3">
               <Button
                 variant="outline"
                 size="icon"
@@ -310,15 +310,16 @@ const FacultyAttendance = () => {
             </div>
 
             {/* Year Filter */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">Filter by Year:</span>
-              <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <span className="text-sm text-muted-foreground text-center sm:text-left">Filter by Year:</span>
+              <div className="flex flex-wrap justify-center sm:justify-start gap-2">
                 {[1, 2, 3].map((year) => (
                   <Button
                     key={year}
                     variant={selectedYear === year ? "default" : "outline"}
                     onClick={() => setSelectedYear(year)}
-                    className="min-w-[80px]"
+                    className="min-w-[70px] sm:min-w-[80px]"
+                    size="sm"
                   >
                     Year {year}
                   </Button>
@@ -328,12 +329,12 @@ const FacultyAttendance = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-border">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 mt-4 pt-4 border-t border-border">
             <Button
               variant="outline"
               size="sm"
               onClick={markAllPresent}
-              className="text-success hover:bg-success/10"
+              className="text-success hover:bg-success/10 flex-1 sm:flex-none"
             >
               <Check className="w-4 h-4 mr-1" />
               Mark All Present
@@ -342,20 +343,20 @@ const FacultyAttendance = () => {
               variant="outline"
               size="sm"
               onClick={markAllAbsent}
-              className="text-destructive hover:bg-destructive/10"
+              className="text-destructive hover:bg-destructive/10 flex-1 sm:flex-none"
             >
               <X className="w-4 h-4 mr-1" />
               Mark All Absent
             </Button>
-            <div className="flex-1" />
+            <div className="flex-1 hidden sm:block" />
           </div>
         </GlassCard>
 
         {/* Attendance List */}
-        <GlassCard className="p-6">
+        <GlassCard className="p-4 sm:p-6">
           {students.length > 0 ? (
             <>
-              <div className="space-y-2">
+              <div className="space-y-3 sm:space-y-2">
                 {students.map((student) => {
                   const periodsArray = attendance[student._id] ?? Array(TOTAL_PERIODS).fill(false);
                   const periodsCounted = periodsArray.filter(Boolean).length;
@@ -368,23 +369,28 @@ const FacultyAttendance = () => {
                   return (
                     <div
                       key={student._id}
-                      className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg ${rowBg}`}
+                      className={`p-3 sm:p-4 border rounded-lg ${rowBg}`}
                     >
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-                        <p className="font-medium text-sm">{student.roll_number}</p>
-                        <p className="text-xs text-muted-foreground">{student.branch_code}</p>
-                      </div>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                        <span className="text-sm font-semibold">
-                          {periodsCounted}/{TOTAL_PERIODS}
-                        </span>
-                        <div className="mt-1 sm:mt-0 overflow-x-auto">
-                          <div className="inline-flex space-x-1">
+                      <div className="flex flex-col gap-3">
+                        {/* Student Info */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 sm:gap-4">
+                            <p className="font-medium text-sm sm:text-base">{student.roll_number}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">{student.branch_code}</p>
+                          </div>
+                          <span className="text-sm sm:text-base font-semibold">
+                            {periodsCounted}/{TOTAL_PERIODS}
+                          </span>
+                        </div>
+                        
+                        {/* Period Buttons */}
+                        <div className="overflow-x-auto">
+                          <div className="inline-flex flex-wrap gap-1 sm:gap-1 min-w-full sm:min-w-0">
                             {periodsArray.map((isPeriodPresent, periodIndex) => (
                               <button
                                 key={periodIndex}
                                 onClick={() => togglePeriod(student._id, periodIndex)}
-                                className={`py-1 px-2 rounded text-xs font-semibold transition-all duration-200 border ${
+                                className={`py-1 px-2 sm:px-3 rounded text-xs font-semibold transition-all duration-200 border flex-shrink-0 ${
                                   isPeriodPresent
                                     ? "bg-success/80 border-success text-white"
                                     : "bg-muted border-border text-muted-foreground hover:bg-muted/70"
@@ -401,11 +407,11 @@ const FacultyAttendance = () => {
                 })}
               </div>
 
-              <div className="mt-6 pt-6 border-t border-border flex justify-end">
+              <div className="mt-6 pt-6 border-t border-border flex justify-center sm:justify-end">
                 <Button
                   onClick={saveAttendance}
                   disabled={saving}
-                  className="btn-gradient px-8"
+                  className="btn-gradient px-6 sm:px-8 w-full sm:w-auto"
                 >
                   {saving ? (
                     <Loader size="sm" />

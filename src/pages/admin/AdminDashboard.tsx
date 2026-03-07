@@ -468,8 +468,8 @@ const AdminDashboard = () => {
           </div>
 
           {/* Stats and Actions */}
-          <div className="flex items-center gap-4 flex-col sm:flex-row">
-            <GlassCard className="p-4 bg-blue-50 border border-blue-200 min-w-[140px]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <GlassCard className="p-4 bg-blue-50 border border-blue-200 min-w-[140px] w-full sm:w-auto">
               <p className="text-muted-foreground text-xs sm:text-sm">Total Faculty</p>
               <p className="text-lg sm:text-xl font-bold text-blue-700">{faculty.length}</p>
             </GlassCard>
@@ -478,7 +478,7 @@ const AdminDashboard = () => {
                 await logout();
                 navigate("/auth");
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-destructive hover:bg-destructive/10 transition"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-destructive hover:bg-destructive/10 transition w-full sm:w-auto"
             >
               <LogOut className="w-4 h-4" />
               Logout
@@ -599,9 +599,9 @@ const AdminDashboard = () => {
               <div className="pt-6 border-t border-border">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Assign Subjects</h3>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <Label className="text-sm font-medium">Year:</Label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <Label className="text-sm font-medium whitespace-nowrap">Year:</Label>
                       <select
                         value={selectedYear}
                         onChange={(e) => {
@@ -610,19 +610,19 @@ const AdminDashboard = () => {
                           // Auto-select first semester of the year
                           setSelectedSemester((newYear - 1) * 2 + 1);
                         }}
-                        className="px-3 py-1 border border-border rounded-md text-sm bg-background"
+                        className="px-3 py-1 border border-border rounded-md text-sm bg-background flex-1 sm:flex-initial"
                       >
                         <option value={1}>Year 1</option>
                         <option value={2}>Year 2</option>
                         <option value={3}>Year 3</option>
                       </select>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Label className="text-sm font-medium">Semester:</Label>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <Label className="text-sm font-medium whitespace-nowrap">Semester:</Label>
                       <select
                         value={selectedSemester}
                         onChange={(e) => setSelectedSemester(Number(e.target.value))}
-                        className="px-3 py-1 border border-border rounded-md text-sm bg-background"
+                        className="px-3 py-1 border border-border rounded-md text-sm bg-background flex-1 sm:flex-initial"
                       >
                         <option value={1}>Semester 1</option>
                         <option value={2}>Semester 2</option>
@@ -635,7 +635,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 {subjects.length > 0 || facultyForm.assignedSubjects.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Show assigned subjects from other semesters first */}
                     {allSubjects
                       .filter(subject => 
@@ -652,9 +652,9 @@ const AdminDashboard = () => {
                             type="checkbox"
                             checked={facultyForm.assignedSubjects.includes(subject._id)}
                             onChange={() => handleSubjectToggle(subject._id)}
-                            className="rounded border-border"
+                            className="rounded border-border mr-3"
                           />
-                          <label className="ml-3 flex-1 cursor-pointer">
+                          <label className="flex-1 cursor-pointer">
                             <p className="font-medium text-sm">{subject.code}</p>
                             <p className="text-xs text-orange-600">{subject.name} (Sem {subject.semester}) - Different Semester</p>
                           </label>
@@ -671,9 +671,9 @@ const AdminDashboard = () => {
                           type="checkbox"
                           checked={facultyForm.assignedSubjects.includes(subject._id)}
                           onChange={() => handleSubjectToggle(subject._id)}
-                          className="rounded border-border"
+                          className="rounded border-border mr-3"
                         />
-                        <label className="ml-3 flex-1 cursor-pointer">
+                        <label className="flex-1 cursor-pointer">
                           <p className="font-medium text-sm">{subject.code}</p>
                           <p className="text-xs text-muted-foreground">{subject.name} (Sem {subject.semester})</p>
                         </label>
@@ -713,7 +713,7 @@ const AdminDashboard = () => {
               </div>
 
               {/* Buttons */}
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Button
                   type="submit"
                   disabled={loading}
@@ -732,6 +732,7 @@ const AdminDashboard = () => {
                     setErrors({});
                   }}
                   disabled={loading}
+                  className="sm:flex-initial"
                 >
                   Cancel
                 </Button>
@@ -749,59 +750,113 @@ const AdminDashboard = () => {
               <Loader size="md" text="Loading faculty..." />
             </div>
           ) : faculty.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Full Name</TableHead>
-                    <TableHead>Assigned Subjects</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {faculty.map((fac) => (
-                    <TableRow key={fac._id}>
-                      <TableCell className="font-mono text-sm">{fac.email}</TableCell>
-                      <TableCell>{fac.full_name}</TableCell>
-                      <TableCell>
+            <div className="space-y-4">
+              {/* Mobile Card Layout */}
+              <div className="block md:hidden space-y-4">
+                {faculty.map((fac) => (
+                  <GlassCard key={fac._id} className="p-4">
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-lg">{fac.full_name}</h3>
+                        <p className="text-sm text-muted-foreground font-mono">{fac.email}</p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-sm font-medium mb-2">Assigned Subjects:</p>
                         {fac.assigned_subjects && fac.assigned_subjects.length > 0 ? (
-                          <div className="space-y-1">
+                          <div className="flex flex-wrap gap-1">
                             {fac.assigned_subjects.map((subId) => (
-                              <p key={subId} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded w-fit">
+                              <span key={subId} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
                                 {getSubjectName(subId)}
-                              </p>
+                              </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-muted-foreground text-xs">No subjects assigned</span>
+                          <span className="text-sm text-muted-foreground">No subjects assigned</span>
                         )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditFaculty(fac)}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteFaculty(fac._id)}
-                            disabled={deleting === fac._id}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+                      </div>
+                      
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditFaculty(fac)}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex-1"
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteFaculty(fac._id)}
+                          disabled={deleting === fac._id}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-1"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </GlassCard>
+                ))}
+              </div>
+              
+              {/* Desktop Table Layout */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Full Name</TableHead>
+                      <TableHead>Assigned Subjects</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {faculty.map((fac) => (
+                      <TableRow key={fac._id}>
+                        <TableCell className="font-mono text-sm">{fac.email}</TableCell>
+                        <TableCell>{fac.full_name}</TableCell>
+                        <TableCell>
+                          {fac.assigned_subjects && fac.assigned_subjects.length > 0 ? (
+                            <div className="space-y-1">
+                              {fac.assigned_subjects.map((subId) => (
+                                <p key={subId} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded w-fit">
+                                  {getSubjectName(subId)}
+                                </p>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">No subjects assigned</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditFaculty(fac)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteFaculty(fac._id)}
+                              disabled={deleting === fac._id}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-8">No faculty members yet</p>
@@ -901,41 +956,43 @@ const AdminDashboard = () => {
           ) : links.length > 0 ? (
             <div className="space-y-4">
               {links.map((link) => (
-                <div key={link._id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition">
-                  <div className="flex-1">
-                    <h4 className="font-semibold">{link.title}</h4>
-                    <p className="text-sm text-muted-foreground mt-1">{link.description}</p>
-                    {link.url && (
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-flex items-center gap-1"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        {link.url}
-                      </a>
-                    )}
-                    <div className="flex items-center justify-between mt-2">
-                      <p className="text-xs text-muted-foreground">
-                        Posted on {new Date(link.created_at).toLocaleDateString()}
-                        {link.created_by && ` by ${link.created_by}`}
+                <div key={link._id} className="p-4 border border-border rounded-lg hover:bg-accent/50 transition">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex-1">
+                      <h4 className="font-semibold mb-1">{link.title}</h4>
+                      <p className="text-sm text-muted-foreground mb-2">{link.description}</p>
+                      {link.url && (
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 mb-2"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Link
+                        </a>
+                      )}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-xs text-muted-foreground">
+                          Posted on {new Date(link.created_at).toLocaleDateString()}
+                          {link.created_by && ` by ${link.created_by}`}
+                        </p>
                         {link.created_by_role && (
-                          <Badge variant="outline" className="text-xs text-blue-600 ml-2">
+                          <Badge variant="outline" className="text-xs text-blue-600">
                             {link.created_by_role === 'faculty' ? 'Faculty' : 'Admin'}
                           </Badge>
                         )}
-                      </p>
+                      </div>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteLink(link._id)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 self-start sm:self-center"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteLink(link._id)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
                 </div>
               ))}
             </div>
@@ -1072,49 +1129,49 @@ const AdminDashboard = () => {
           ) : notifications.length > 0 ? (
             <div className="space-y-4">
               {notifications.map((notification) => (
-                <div key={notification._id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-semibold">{notification.title}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {notification.type}
-                      </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {notification.target_year === "0" ? "All Years" : `Year ${notification.target_year}`}
-                      </Badge>
-                      {notification.created_by_role && (
-                        <Badge variant="outline" className="text-xs text-blue-600">
-                          {notification.created_by_role === 'faculty' ? 'Faculty' : 'Admin'}
+                <div key={notification._id} className="p-4 border border-border rounded-lg hover:bg-accent/50 transition">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h4 className="font-semibold">{notification.title}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {notification.type}
                         </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          {notification.target_year === "0" ? "All Years" : `Year ${notification.target_year}`}
+                        </Badge>
+                        {notification.created_by_role && (
+                          <Badge variant="outline" className="text-xs text-blue-600">
+                            {notification.created_by_role === 'faculty' ? 'Faculty' : 'Admin'}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{notification.content}</p>
+                      {notification.url && (
+                        <a
+                          href={notification.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 mb-2"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          {notification.url}
+                        </a>
                       )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{notification.content}</p>
-                    {notification.url && (
-                      <a
-                        href={notification.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-flex items-center gap-1"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        {notification.url}
-                      </a>
-                    )}
-                    <div className="flex items-center justify-between mt-2">
                       <p className="text-xs text-muted-foreground">
                         Posted on {new Date(notification.created_at).toLocaleDateString()}
                         {notification.created_by && ` by ${notification.created_by}`}
                       </p>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteNotification(notification._id)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 self-start sm:self-center"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteNotification(notification._id)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
                 </div>
               ))}
             </div>
