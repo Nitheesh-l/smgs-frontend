@@ -881,7 +881,7 @@ const FacultyMarks = () => {
                 <span className="text-sm font-medium">Bulk Marks Entry:</span>
               </div>
               <div className="flex items-center gap-2 w-full sm:w-auto p-2">
-                <span className="bg-cyan-300 text-sm text-muted-foreground">Subject:</span>
+                <span className="text-sm text-muted-foreground">Subject:</span>
                 <select
                   value={selectedSubjectForBulk}
                   onChange={(e) => setSelectedSubjectForBulk(e.target.value)}
