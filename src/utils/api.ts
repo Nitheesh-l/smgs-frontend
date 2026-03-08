@@ -12,7 +12,7 @@ export async function fetchJson(
   options?: RequestInit
 ): Promise<{ res: Response; data: any }> {
   try {
-    const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
+    const fullUrl = url.startsWith('http') ? url : `${API_BASE.replace(/\/$/, '')}${url}`;
     const res = await fetch(fullUrl, options);
     let data = null;
 
