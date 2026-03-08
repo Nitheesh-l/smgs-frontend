@@ -170,6 +170,8 @@ const FacultyMarks = () => {
       const { res: studRes, data: studData } = await fetchJson(`/api/students?${studParams.toString()}`);
       if (studRes.ok) {
         const list = Array.isArray(studData) ? studData : [];
+        // sort ascending by creation date so the first added student appears first in the bulk table
+        list.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
         setStudents(list);
         // if current selectedStudent no longer exists, clear it
         if (selectedStudent && !list.find((s: Student) => s._id === selectedStudent)) {
