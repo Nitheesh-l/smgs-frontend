@@ -190,12 +190,13 @@ const StudentAttendance = () => {
 
   // Semester configuration
   const semesters = [
-    { id: 1, name: "1st Year - Semester 1", months: [7, 8, 9, 10, 11, 12] },
-    { id: 2, name: "1st Year - Semester 2", months: [1, 2, 3, 4, 5, 6] },
-    { id: 3, name: "2nd Year - Semester 3", months: [7, 8, 9, 10, 11, 12] },
-    { id: 4, name: "2nd Year - Semester 4", months: [1, 2, 3, 4, 5, 6] },
-    { id: 5, name: "3rd Year - Semester 5", months: [7, 8, 9, 10, 11, 12] },
-    { id: 6, name: "3rd Year - Semester 6", months: [1, 2, 3, 4, 5, 6] },
+    { id: 1, name: "1st Year - Semester 1", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+    { id: 2, name: "1st Year - Semester 2", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+    { id: 3, name: "2nd Year - Semester 3", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+    { id: 4, name: "2nd Year - Semester 4", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+    { id: 5, name: "3rd Year - Semester 5", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+    { id: 6, name: "3rd Year - Semester 6", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }
+
   ];
 
   const presentDays = attendance.filter((a) => a.status === 'Present' || a.status === 'Half Day').length;
