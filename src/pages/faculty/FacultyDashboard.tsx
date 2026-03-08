@@ -313,25 +313,25 @@ const FacultyDashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <StatCard
             title={`Total Students (Year ${selectedYear})`}
-            value={stats.totalStudents}
+            value={stats?.totalStudents || 0}
             icon={<Users className="w-6 h-6" />}
             variant="primary"
           />
           <StatCard
             title={`Present Today (Year ${selectedYear})`}
-            value={stats.attendanceToday}
+            value={stats?.attendanceToday || 0}
             icon={<Calendar className="w-6 h-6" />}
             variant="success"
           />
           <StatCard
             title={`Avg Attendance (Year ${selectedYear})`}
-            value={`${stats.avgAttendance}%`}
+            value={`${stats?.avgAttendance || 0}%`}
             icon={<TrendingUp className="w-6 h-6" />}
             variant="accent"
           />
           <StatCard
             title={`Subjects (Year ${selectedYear})`}
-            value={stats.totalSubjects}
+            value={stats?.totalSubjects || 0}
             icon={<BookOpen className="w-6 h-6" />}
             variant="warning"
           />
