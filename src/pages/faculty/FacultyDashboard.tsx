@@ -132,24 +132,67 @@ const FacultyDashboard = () => {
       return;
     }
 
-    try {
-      const { res, data } = await fetchJson("/api/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...notificationForm,
-          created_by: profile?.full_name,
-          created_by_role: 'faculty'
-        }),
-      });
+    if (!notificationForm.type) {
+      toast.error("Notification type is required");
+      return;
+    }
 
-      if (!res.ok) {
-        toast.error(data?.error || "Failed to add notification");
+    try {
+      // Determine which years to send to
+      const years = notificationForm.target_year === "0" 
+        ? [1, 2, 3] // All years
+        : [Number(notificationForm.target_year)];
+
+      console.log("Years to send to:", years);
+      const notifications: any[] = [];
+      let successCount = 0;
+
+      // Send notification for each year
+      for (const year of years) {
+        const payload = {
+          title: notificationForm.title.trim(),
+          content: notificationForm.content.trim(),
+          type: String(notificationForm.type).trim(),
+          target_year: Number(year),
+          created_by: profile?.full_name || "Faculty",
+          created_by_role: 'faculty',
+          url: notificationForm.type === "link" && notificationForm.url?.trim() ? notificationForm.url.trim() : undefined
+        };
+
+        // Remove undefined fields
+        Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+
+        console.log(`Sending notification payload for year ${year}:`, JSON.stringify(payload));
+
+        try {
+          const { res, data } = await fetchJson("/api/notifications", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!res.ok) {
+            console.error(`Error for year ${year}:`, data);
+            toast.error(`Year ${year}: ${data?.error || "Failed to add notification"}`);
+            continue; // Continue to next year instead of returning
+          }
+
+          notifications.push(data.notification);
+          successCount++;
+          console.log(`Successfully sent to year ${year}`);
+        } catch (yearError) {
+          console.error(`Error sending to year ${year}:`, yearError);
+          continue;
+        }
+      }
+
+      if (successCount === 0) {
+        toast.error("Failed to add notification to any year");
         return;
       }
 
-      toast.success("Notification added successfully");
-      setNotifications(prev => [data.notification, ...prev]);
+      toast.success(`Notification added successfully to ${successCount}/${years.length} year(s)`);
+      setNotifications(prev => [...notifications, ...prev]);
       setNotificationForm({ title: "", content: "", target_year: "0", type: "announcement", url: "" });
       setShowNotificationForm(false);
     } catch (error) {

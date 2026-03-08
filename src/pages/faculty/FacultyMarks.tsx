@@ -174,7 +174,6 @@ const FacultyMarks = () => {
         // if current selectedStudent no longer exists, clear it
         if (selectedStudent && !list.find((s: Student) => s._id === selectedStudent)) {
           setSelectedStudent("");
-          setMarks([]);
         }
       }
 
@@ -200,29 +199,24 @@ const FacultyMarks = () => {
         setSubjects(filtered);
       }
 
-      // Fetch marks only for selected student
-      if (selectedStudent) {
-        const params = new URLSearchParams();
-        params.set('semester', selectedSemester);
-        params.set('student_id', selectedStudent);
-
-        const { res: marksRes, data: marksData } = await fetchJson(`/api/marks?${params.toString()}`);
-        if (marksRes.ok) {
-          let marksList: Mark[] = Array.isArray(marksData) ? marksData : [];
-          // filter by subject type if not 'all'
-          if (selectedSubjectType !== "all" && subjects.length > 0) {
-            const allowed = subjects
-              .filter((s) => s.type === selectedSubjectType)
-              .map((s) => s._id);
-            marksList = marksList.filter((m) => allowed.includes(m.subject_id));
-          }
-          if (activeAssignedSubjects.length > 0) {
-            marksList = marksList.filter((m) => activeAssignedSubjects.includes(m.subject_id));
-          }
-          setMarks(marksList);
+      // Fetch marks for current semester (for display table)
+      const marksParams = new URLSearchParams();
+      marksParams.set('semester', selectedSemester);
+      
+      const { res: marksRes, data: marksData } = await fetchJson(`/api/marks?${marksParams.toString()}`);
+      if (marksRes.ok) {
+        let marksList: Mark[] = Array.isArray(marksData) ? marksData : [];
+        // filter by subject type if not 'all'
+        if (selectedSubjectType !== "all" && subjects.length > 0) {
+          const allowed = subjects
+            .filter((s) => s.type === selectedSubjectType)
+            .map((s) => s._id);
+          marksList = marksList.filter((m) => allowed.includes(m.subject_id));
         }
-      } else {
-        setMarks([]);
+        if (activeAssignedSubjects.length > 0) {
+          marksList = marksList.filter((m) => activeAssignedSubjects.includes(m.subject_id));
+        }
+        setMarks(marksList);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -285,6 +279,30 @@ const FacultyMarks = () => {
     setBulkMarksInputs({});
     setCustomTotalMarks("100");
   }, [selectedYear, selectedSemester, selectedBranch]);
+
+  // Pre-populate bulk marks inputs with existing marks when subject/exam type changes
+  useEffect(() => {
+    if (selectedSubjectForBulk && selectedExamTypeForBulk && students.length > 0) {
+      const existingMarks: Record<string, string> = {};
+      let totalMarks = 100; // default
+      
+      students.forEach((stu) => {
+        const existingMark = marks.find(m => 
+          m.student_id === stu._id && 
+          m.subject_id === selectedSubjectForBulk && 
+          m.exam_type === selectedExamTypeForBulk
+        );
+        
+        if (existingMark) {
+          existingMarks[stu._id] = String(existingMark.marks_obtained);
+          totalMarks = existingMark.total_marks; // Use the total marks from existing entry
+        }
+      });
+      
+      setBulkMarksInputs(existingMarks);
+      setCustomTotalMarks(String(totalMarks));
+    }
+  }, [selectedSubjectForBulk, selectedExamTypeForBulk, students, marks]);
 
   // Fetch subjects for form semester
   useEffect(() => {
@@ -486,6 +504,73 @@ const FacultyMarks = () => {
     } catch (error) {
       console.error("Delete link error:", error);
       toast.error("Failed to delete link");
+    }
+  };
+
+  const handleBulkMarkEdit = (studentId: string) => {
+    const student = students.find(s => s._id === studentId);
+    const existingMark = marks.find(m => m.student_id === studentId && m.subject_id === selectedSubjectForBulk && m.exam_type === selectedExamTypeForBulk);
+    
+    if (existingMark) {
+      setEditingMark(existingMark);
+      setFormData({
+        student_id: existingMark.student_id,
+        subject_id: existingMark.subject_id,
+        marks_obtained: String(existingMark.marks_obtained),
+        total_marks: String(existingMark.total_marks),
+        exam_type: existingMark.exam_type,
+        academicYear: existingMark.academic_year,
+        semester: String(existingMark.semester),
+      });
+      setSelectedStudent(studentId);
+      setIsDialogOpen(true);
+    } else {
+      toast.info("No existing entry to edit. Use the input field to add marks.");
+    }
+  };
+
+  const handleBulkMarkDelete = (studentId: string) => {
+    const student = students.find(s => s._id === studentId);
+    const existingMark = marks.find(m => m.student_id === studentId && m.subject_id === selectedSubjectForBulk && m.exam_type === selectedExamTypeForBulk);
+    
+    if (existingMark) {
+      if (!confirm(`Are you sure you want to delete marks for ${student?.roll_number}?`)) return;
+      
+      const handleDelete = async () => {
+        try {
+          const { res, data } = await fetchJson(`/api/marks/${existingMark._id}`, {
+            method: "DELETE",
+          });
+
+          if (!res.ok) {
+            toast.error(data?.error || "Failed to delete marks");
+            return;
+          }
+
+          toast.success("Marks deleted successfully");
+          // Update local marks state immediately for instant UI feedback
+          setMarks(prevMarks => prevMarks.filter(mark => mark._id !== existingMark._id));
+          setBulkMarksInputs(prev => {
+            const newInputs = { ...prev };
+            delete newInputs[studentId];
+            return newInputs;
+          });
+          // Then refresh from server to ensure consistency
+          fetchData();
+        } catch (error) {
+          console.error("Error deleting marks:", error);
+          toast.error("Failed to delete marks");
+        }
+      };
+      handleDelete();
+    } else {
+      // Clear the input field for this student (unsaved entry)
+      setBulkMarksInputs(prev => {
+        const newInputs = { ...prev };
+        delete newInputs[studentId];
+        return newInputs;
+      });
+      toast.info("Entry cleared");
     }
   };
 
@@ -885,7 +970,7 @@ const FacultyMarks = () => {
                   onChange={(e) => setSelectedSubjectForBulk(e.target.value)}
                   className="px-2 py-1 w-full border border-border rounded-md bg-background text-sm sm:text-wrap"
                 >
-                  <option className="bg-cyan-300 w-fit" value="">Select Subject</option>
+                  <option className="w-fit" value="">Select Subject</option>
                   {subjects.map((s) => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
                 </select>
               </div>
@@ -920,7 +1005,7 @@ const FacultyMarks = () => {
                     <TableRow>
                       <TableHead>Roll Number</TableHead>
                       <TableHead>Marks (out of {Number(customTotalMarks) || 100})</TableHead>
-                      {/* <TableHead>Total Marks</TableHead> */}
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -930,17 +1015,45 @@ const FacultyMarks = () => {
                         <TableRow key={stu._id}>
                           <TableCell className="font-medium">{stu.roll_number}</TableCell>
                           <TableCell>
-                            <Input
-                              type="number"
-                              value={bulkMarksInputs[stu._id] || ''}
-                              onChange={(e) => setBulkMarksInputs(prev => ({ ...prev, [stu._id]: e.target.value }))}
-                              placeholder="Enter marks"
-                              className="w-24"
-                              min="0"
-                              max={Number(customTotalMarks) || 100}
-                            />
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                value={bulkMarksInputs[stu._id] || ''}
+                                onChange={(e) => setBulkMarksInputs(prev => ({ ...prev, [stu._id]: e.target.value }))}
+                                placeholder="Enter marks"
+                                className={`w-24 ${existingMark ? 'border-blue-500 bg-blue-50' : ''}`}
+                                min="0"
+                                max={Number(customTotalMarks) || 100}
+                              />
+                              {existingMark && (
+                                <span className="text-xs text-blue-600 font-medium" title="Existing mark">
+                                  ✓
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
-                          {/* <TableCell>{existingMark ? existingMark.total_marks : 'N/A'}</TableCell> */}
+                          <TableCell className="text-right">
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleBulkMarkEdit(stu._id)}
+                                className="hover:bg-primary/10 hover:text-primary"
+                                title={existingMark ? "Edit existing mark" : "No saved mark to edit"}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleBulkMarkDelete(stu._id)}
+                                className="hover:bg-destructive/10 hover:text-destructive"
+                                title={existingMark ? "Delete saved mark" : "Clear unsaved entry"}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
