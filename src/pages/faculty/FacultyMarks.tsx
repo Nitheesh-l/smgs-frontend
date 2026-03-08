@@ -442,7 +442,7 @@ const FacultyMarks = () => {
     }
 
     try {
-      const res = await fetch("/api/links", {
+      const { res, data } = await fetchJson("/api/links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -452,7 +452,6 @@ const FacultyMarks = () => {
         }),
       });
 
-      const data = await res.json();
       if (!res.ok) {
         toast.error(data?.error || "Failed to add link");
         return;
@@ -472,12 +471,11 @@ const FacultyMarks = () => {
     if (!confirm("Are you sure you want to delete this link/update?")) return;
 
     try {
-      const res = await fetch(`/api/links/${linkId}`, {
+      const { res, data } = await fetchJson(`/api/links/${linkId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
 
-      const data = await res.json();
       if (!res.ok) {
         toast.error(data?.error || "Failed to delete link");
         return;

@@ -341,7 +341,7 @@ const AdminDashboard = () => {
 
     setLinkLoading(true);
     try {
-      const res = await fetch("/api/links", {
+      const { res, data } = await fetchJson("/api/links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -351,7 +351,6 @@ const AdminDashboard = () => {
         }),
       });
 
-      const data = await res.json();
       if (!res.ok) {
         toast.error(data?.error || "Failed to add link");
         return;
@@ -373,12 +372,11 @@ const AdminDashboard = () => {
     if (!confirm("Are you sure you want to delete this link/update?")) return;
 
     try {
-      const res = await fetch(`/api/links/${linkId}`, {
+      const { res, data } = await fetchJson(`/api/links/${linkId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
 
-      const data = await res.json();
       if (!res.ok) {
         toast.error(data?.error || "Failed to delete link");
         return;
@@ -402,7 +400,7 @@ const AdminDashboard = () => {
 
     setNotificationLoading(true);
     try {
-      const res = await fetch("/api/notifications", {
+      const { res, data } = await fetchJson("/api/notifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -412,7 +410,6 @@ const AdminDashboard = () => {
         }),
       });
 
-      const data = await res.json();
       if (!res.ok) {
         toast.error(data?.error || "Failed to add notification");
         return;
@@ -434,12 +431,11 @@ const AdminDashboard = () => {
     if (!confirm("Are you sure you want to delete this notification?")) return;
 
     try {
-      const res = await fetch(`/api/notifications/${notificationId}`, {
+      const { res, data } = await fetchJson(`/api/notifications/${notificationId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
 
-      const data = await res.json();
       if (!res.ok) {
         toast.error(data?.error || "Failed to delete notification");
         return;
