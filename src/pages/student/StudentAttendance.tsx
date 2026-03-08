@@ -82,12 +82,25 @@ const StudentAttendance = () => {
 
       // determine which months to include (selectedMonths overrides full semester)
       const monthsToFetch = selectedMonths.length > 0 ? selectedMonths : currentSemester.months;
+      
+      // Check if selected months span across years (cross-year selection)
+      const isCrossYearSelection = monthsToFetch.some(m => m > 6) && monthsToFetch.some(m => m <= 6);
+      
       // Fetch attendance for each chosen month
       for (const month of monthsToFetch) {
+        // Determine which year to fetch for this month
+        let yearToFetch = selectedYear;
+        if (isCrossYearSelection) {
+          // For cross-year selections, months 11-12 belong to previous year, 1-6 to current year
+          if (month >= 11) {
+            yearToFetch = String(Number(selectedYear) - 1);
+          }
+        }
+
         const params = new URLSearchParams();
         params.set('student_id', studentId);
         params.set('month', String(month));
-        params.set('year', selectedYear);
+        params.set('year', yearToFetch);
 
         const { res, data } = await fetchJson(`/api/attendance?${params.toString()}`);
         if (res.ok) {
@@ -99,6 +112,7 @@ const StudentAttendance = () => {
           semesterData.monthlyStats[month] = {
             month,
             monthName: monthNames[month - 1],
+            year: yearToFetch,
             present: presentDays,
             total: totalDays,
             percentage,
@@ -123,12 +137,10 @@ const StudentAttendance = () => {
     }
   };
 
-  // reset selected months when semester changes
+  // reset selected months when semester changes - allow cross-year selection
   useEffect(() => {
-    const sem = semesters.find(s => s.id === selectedSemester);
-    if (sem) {
-      setSelectedMonths([...sem.months]);
-    }
+    // Set all months to allow cross-year selections for any semester
+    setSelectedMonths([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
   }, [selectedSemester]);
 
   // sync single month detail view
@@ -190,12 +202,12 @@ const StudentAttendance = () => {
 
   // Semester configuration
   const semesters = [
-    { id: 1, name: "1st Year - Semester 1", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-    { id: 2, name: "1st Year - Semester 2", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-    { id: 3, name: "2nd Year - Semester 3", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-    { id: 4, name: "2nd Year - Semester 4", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-    { id: 5, name: "3rd Year - Semester 5", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
-    { id: 6, name: "3rd Year - Semester 6", months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }
+    { id: 1, name: "1st Year - Semester 1", months: [11, 12, 1, 2, 3, 4] },
+    { id: 2, name: "1st Year - Semester 2", months: [5, 6, 7, 8, 9, 10] },
+    { id: 3, name: "2nd Year - Semester 3", months: [11, 12, 1, 2, 3, 4] },
+    { id: 4, name: "2nd Year - Semester 4", months: [5, 6, 7, 8, 9, 10] },
+    { id: 5, name: "3rd Year - Semester 5", months: [11, 12,1, 2, 3, 4] },
+    { id: 6, name: "3rd Year - Semester 6", months: [5, 6, 7, 8, 9, 10] }
 
   ];
 
@@ -538,10 +550,12 @@ const StudentAttendance = () => {
                 <GlassCard className="p-6">
                   <h3 className="text-lg font-semibold mb-4">Monthly Attendance Breakdown</h3>
                   <div className="space-y-4">
-                    {Object.entries(semesterStats.monthlyStats).map(([month, stats]: [string, any]) => (
+                    {Object.entries(semesterStats.monthlyStats)
+                      .filter(([month]) => selectedMonths.includes(Number(month)))
+                      .map(([month, stats]: [string, any]) => (
                       <div key={month} className="p-4 border rounded-lg">
                         <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-medium">{stats.monthName}</h4>
+                          <h4 className="font-medium">{stats.monthName} {stats.year ? `(${stats.year})` : ''}</h4>
                           <div className="text-right">
                             <div className="text-lg font-bold">
                               {stats.percentage}%

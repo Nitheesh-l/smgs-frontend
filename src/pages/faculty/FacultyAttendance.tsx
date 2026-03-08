@@ -77,13 +77,11 @@ const FacultyAttendance = () => {
     }
   }, [profile, authLoading, navigate]);
 
-  // whenever semester changes reset month selections
+  // whenever semester changes reset month selections - allow cross-year selection
   useEffect(() => {
-    const sem = semesters.find(s => s.id === selectedSemester);
-    if (sem) {
-      setSelectedMonths([...sem.months]);
-      setSelectedMonth(null);
-    }
+    // Set all months to allow cross-year selections for any semester
+    setSelectedMonths([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    setSelectedMonth(null);
   }, [selectedSemester]);
 
   // sync single-month detail view when only one month selected
@@ -449,7 +447,7 @@ const FacultyAttendance = () => {
 
             {viewMode === 'monthly' && (
               <>
-                {/* Semester Selector */}
+                {/* Semester Selector
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <span className="text-sm text-muted-foreground text-center sm:text-left">Semester:</span>
                   <div className="flex flex-wrap justify-center sm:justify-start gap-2">
@@ -468,7 +466,7 @@ const FacultyAttendance = () => {
                       </Button>
                     ))}
                   </div>
-                </div>
+                </div> */}
 
                 {/* Month Selector (multi-select) */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -717,10 +715,12 @@ const FacultyAttendance = () => {
                   {selectedMonth === null ? (
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold">Monthly Breakdown</h3>
-                      {Object.entries(semesterStats.monthlyStats).map(([month, stats]: [string, any]) => (
+                      {Object.entries(semesterStats.monthlyStats)
+                        .filter(([month]) => selectedMonths.includes(Number(month)))
+                        .map(([month, stats]: [string, any]) => (
                         <div key={month} className="p-4 border rounded-lg">
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium">{stats.monthName}</h4>
+                            <h4 className="font-medium">{stats.monthName} {stats.year ? `(${stats.year})` : ''}</h4>
                             <span className="text-sm text-muted-foreground">
                               {stats.averagePercentage}% average attendance
                             </span>
